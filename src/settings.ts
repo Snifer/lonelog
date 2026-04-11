@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import LonelogPlugin from "./main";
+import { t, setLocale } from "./i18n/i18n";
 
 export interface LonelogSettings {
 	// Phase 1 settings
@@ -11,6 +12,14 @@ export interface LonelogSettings {
 	promptForSceneContext: boolean;
 	autoWrapInCodeBlock: boolean;
 
+	// Phase 3: Frontmatter Automation
+	defaultRuleset: string;
+	defaultGenre: string;
+	defaultPlayer: string;
+	defaultThemes: string;
+	defaultTone: string;
+	autoUpdateLastUpdate: boolean;
+
 	// Template customization
 	actionSequenceTemplate: string;
 	oracleSequenceTemplate: string;
@@ -18,6 +27,14 @@ export interface LonelogSettings {
 	// Highlighting settings
 	enableEditorHighlighting: boolean;
 	enableReadingHighlighting: boolean;
+	enableDiceRoller: boolean;
+
+	// Dice roller output settings
+	diceDetailMode: boolean;   // Show individual dice values instead of sum
+	diceHighLabel: string;     // Label for the highest die
+	showDiceHigh: boolean;     // Whether to show the high die annotation
+	diceLowLabel: string;      // Label for the lowest die
+	showDiceLow: boolean;      // Whether to show the low die annotation
 
 	// Highlighting colors
 	colorAction: string;      // @ lines — blue
@@ -26,6 +43,12 @@ export interface LonelogSettings {
 	colorConsequence: string; // => lines — red
 	colorResult: string;      // -> token — yellow
 	colorTag: string;         // [N:...] tokens — orange
+	colorMeta: string;        // (note: ...) — gray
+	colorDialogue: string;    // Speaker: "..." — cyan
+	colorNarrative: string;   // \--- narrative --- — pink
+	colorTable: string;       // tbl: — lime
+	colorGenerator: string;   // gen: — teal
+	locale: string;           // Interface language
 }
 
 export const DEFAULT_SETTINGS: LonelogSettings = {
@@ -34,12 +57,29 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	autoIncrementScenes: true,
 	promptForSceneContext: true,
 	autoWrapInCodeBlock: false,
+
+	// Phase 3 Defaults
+	defaultRuleset: "Loner + Mythic Oracle",
+	defaultGenre: "Fantasy",
+	defaultPlayer: "Player 1",
+	defaultThemes: "Exploration, Adventure",
+	defaultTone: "Heroic",
+	autoUpdateLastUpdate: true,
+
 	actionSequenceTemplate: "@ [action]\nd: [roll] -> [outcome]\n=> [consequence]",
 	oracleSequenceTemplate: "? [question]\n-> [answer]\n=> [consequence]",
 
 	// Highlighting toggles
 	enableEditorHighlighting: true,
 	enableReadingHighlighting: true,
+	enableDiceRoller: true,
+
+	// Dice output defaults
+	diceDetailMode: false,
+	diceHighLabel: "High",
+	showDiceHigh: true,
+	diceLowLabel: "Low",
+	showDiceLow: true,
 
 	// Match the values currently used in highlighter.css
 	colorAction: "#3b82f6",  // blue
@@ -48,6 +88,12 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	colorConsequence: "#ef4444",  // red
 	colorResult: "#ca8a04",  // yellow
 	colorTag: "#c2410c",  // orange
+	colorMeta: "#71717a",  // gray
+	colorDialogue: "#0891b2",  // cyan
+	colorNarrative: "#db2777",  // pink
+	colorTable: "#84cc16",  // lime
+	colorGenerator: "#0d9488",  // teal
+	locale: "en",
 };
 
 /** Sets Lonelog CSS custom properties on document.body */
@@ -58,6 +104,11 @@ export function applyHighlightColors(settings: LonelogSettings): void {
 	document.body.style.setProperty("--ll-consequence-color", settings.colorConsequence);
 	document.body.style.setProperty("--ll-result-color", settings.colorResult);
 	document.body.style.setProperty("--ll-tag-color", settings.colorTag);
+	document.body.style.setProperty("--ll-meta-color", settings.colorMeta);
+	document.body.style.setProperty("--ll-dialogue-color", settings.colorDialogue);
+	document.body.style.setProperty("--ll-narrative-color", settings.colorNarrative);
+	document.body.style.setProperty("--ll-table-color", settings.colorTable);
+	document.body.style.setProperty("--ll-generator-color", settings.colorGenerator);
 }
 
 /** Removes the injected CSS custom properties (call from onunload). */
@@ -68,6 +119,11 @@ export function removeHighlightColors(): void {
 	document.body.style.removeProperty("--ll-consequence-color");
 	document.body.style.removeProperty("--ll-result-color");
 	document.body.style.removeProperty("--ll-tag-color");
+	document.body.style.removeProperty("--ll-meta-color");
+	document.body.style.removeProperty("--ll-dialogue-color");
+	document.body.style.removeProperty("--ll-narrative-color");
+	document.body.style.removeProperty("--ll-table-color");
+	document.body.style.removeProperty("--ll-generator-color");
 }
 
 // ---------------------------------------------------------------------------
@@ -83,18 +139,28 @@ interface ColorDef {
 		| "colorConsequence"
 		| "colorResult"
 		| "colorTag"
+		| "colorMeta"
+		| "colorDialogue"
+		| "colorNarrative"
+		| "colorTable"
+		| "colorGenerator"
 	>;
 	label: string;
 	desc: string;
 }
 
 const COLOR_DEFS: ColorDef[] = [
-	{ key: "colorAction", label: "Action (@)", desc: "Text color for @ lines" },
-	{ key: "colorQuestion", label: "Question (?)", desc: "Text color for ? lines" },
-	{ key: "colorDice", label: "Dice roll (d:)", desc: "Text color for d: lines" },
-	{ key: "colorConsequence", label: "Consequence (=>)", desc: "Text color for => lines" },
-	{ key: "colorResult", label: "Result arrow (->)", desc: "Text color for -> tokens" },
-	{ key: "colorTag", label: "Tags ([N:…] etc.)", desc: "Text color for bracket tag tokens" },
+	{ key: "colorAction", label: "Action (@)", desc: t("settings.colors-desc") },
+	{ key: "colorQuestion", label: "Question (?)", desc: t("settings.colors-desc") },
+	{ key: "colorDice", label: "Dice roll (d:)", desc: t("settings.colors-desc") },
+	{ key: "colorConsequence", label: "Consequence (=>)", desc: t("settings.colors-desc") },
+	{ key: "colorResult", label: "Result arrow (->)", desc: t("settings.colors-desc") },
+	{ key: "colorTag", label: "Tags ([N:…] etc.)", desc: t("settings.colors-desc") },
+	{ key: "colorMeta", label: t("settings.color-meta"), desc: t("settings.color-meta-desc") },
+	{ key: "colorDialogue", label: t("settings.color-dialogue"), desc: t("settings.color-dialogue-desc") },
+	{ key: "colorNarrative", label: t("settings.color-narrative"), desc: t("settings.color-narrative-desc") },
+	{ key: "colorTable", label: t("settings.color-table"), desc: t("settings.color-table-desc") },
+	{ key: "colorGenerator", label: t("settings.color-generator"), desc: t("settings.color-generator-desc") },
 ];
 
 export class LonelogSettingTab extends PluginSettingTab {
@@ -109,12 +175,31 @@ export class LonelogSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// ── Core Notation ──────────────────────────────────────────────────
-		new Setting(containerEl).setName("Core notation").setHeading();
+		// ── Interface / Language ───────────────────────────────────────────
+		new Setting(containerEl).setName(t("settings.language-section")).setHeading();
 
 		new Setting(containerEl)
-			.setName("Insert space after symbols")
-			.setDesc("Add a space after @, ?, d:, ->, and => for easier typing")
+			.setName(t("settings.language"))
+			.setDesc(t("settings.language-desc"))
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("en", "English")
+					.addOption("es", "Español")
+					.setValue(this.plugin.settings.locale)
+					.onChange(async (value) => {
+						this.plugin.settings.locale = value;
+						setLocale(value);
+						await this.plugin.saveSettings();
+						this.display(); // Refresh tab to update labels
+					})
+			);
+
+		// ── Core Notation ──────────────────────────────────────────────────
+		new Setting(containerEl).setName(t("settings.core-section")).setHeading();
+
+		new Setting(containerEl)
+			.setName(t("settings.insert-space"))
+			.setDesc(t("settings.insert-space-desc"))
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.insertSpaceAfterSymbol)
@@ -125,8 +210,8 @@ export class LonelogSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Smart cursor positioning")
-			.setDesc("Move cursor to optimal position after insertion (e.g., inside brackets)")
+			.setName(t("settings.smart-cursor"))
+			.setDesc(t("settings.smart-cursor-desc"))
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.smartCursorPositioning)
@@ -137,11 +222,11 @@ export class LonelogSettingTab extends PluginSettingTab {
 			);
 
 		// ── Templates ──────────────────────────────────────────────────────
-		new Setting(containerEl).setName("Templates").setHeading();
+		new Setting(containerEl).setName(t("settings.templates-section")).setHeading();
 
 		new Setting(containerEl)
-			.setName("Auto-increment scene numbers")
-			.setDesc("Automatically detect and increment scene numbers")
+			.setName(t("settings.auto-scene"))
+			.setDesc(t("settings.auto-scene-desc"))
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.autoIncrementScenes)
@@ -152,8 +237,8 @@ export class LonelogSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Prompt for scene context")
-			.setDesc("Show modal to enter scene context when inserting a scene marker")
+			.setName(t("settings.prompt-context"))
+			.setDesc(t("settings.prompt-context-desc"))
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.promptForSceneContext)
@@ -163,12 +248,92 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		// ── Highlighting ───────────────────────────────────────────────────
-		new Setting(containerEl).setName("Syntax highlighting").setHeading();
+		// ── Frontmatter ────────────────────────────────────────────────────
+		new Setting(containerEl).setName(t("settings.frontmatter-section")).setHeading();
 
 		new Setting(containerEl)
-			.setName("Enable editor highlighting")
-			.setDesc("Highlight lonelog notation while editing code blocks")
+			.setName(t("settings.default-ruleset"))
+			.setDesc(t("settings.default-ruleset-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Loner + Mythic Oracle")
+					.setValue(this.plugin.settings.defaultRuleset)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultRuleset = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.default-genre"))
+			.setDesc(t("settings.default-genre-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Teen mystery")
+					.setValue(this.plugin.settings.defaultGenre)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultGenre = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.default-player"))
+			.setDesc(t("settings.default-player-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Alex")
+					.setValue(this.plugin.settings.defaultPlayer)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultPlayer = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.default-themes"))
+			.setDesc(t("settings.default-themes-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Friendship, courage")
+					.setValue(this.plugin.settings.defaultThemes)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultThemes = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.default-tone"))
+			.setDesc(t("settings.default-tone-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Eerie but playful")
+					.setValue(this.plugin.settings.defaultTone)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultTone = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.auto-update-last-update"))
+			.setDesc(t("settings.auto-update-last-update-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.autoUpdateLastUpdate)
+					.onChange(async (value) => {
+						this.plugin.settings.autoUpdateLastUpdate = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		// ── Highlighting ───────────────────────────────────────────────────
+		new Setting(containerEl).setName(t("settings.highlight-section")).setHeading();
+
+		new Setting(containerEl)
+			.setName(t("settings.enable-editor"))
+			.setDesc(t("settings.enable-editor-desc"))
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.enableEditorHighlighting)
@@ -186,8 +351,8 @@ export class LonelogSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Enable reading mode highlighting")
-			.setDesc("Highlight lonelog notation in reading view")
+			.setName(t("settings.enable-reading"))
+			.setDesc(t("settings.enable-reading-desc"))
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.enableReadingHighlighting)
@@ -197,9 +362,86 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl).setName("Highlighting colors").setHeading();
+		// ── Extras & Interactive Tools ─────────────────────────────────────
+		new Setting(containerEl).setName(t("settings.extras-section")).setHeading();
+
+		new Setting(containerEl)
+			.setName(t("settings.enable-dice-roller"))
+			.setDesc(t("settings.enable-dice-roller-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableDiceRoller)
+					.onChange(async (value) => {
+						this.plugin.settings.enableDiceRoller = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.dice-detail-mode"))
+			.setDesc(t("settings.dice-detail-mode-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.diceDetailMode)
+					.onChange(async (value) => {
+						this.plugin.settings.diceDetailMode = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.show-dice-high"))
+			.setDesc(t("settings.show-dice-high-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.showDiceHigh)
+					.onChange(async (value) => {
+						this.plugin.settings.showDiceHigh = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.dice-high-label"))
+			.setDesc(t("settings.dice-high-label-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("High")
+					.setValue(this.plugin.settings.diceHighLabel)
+					.onChange(async (value) => {
+						this.plugin.settings.diceHighLabel = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.show-dice-low"))
+			.setDesc(t("settings.show-dice-low-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.showDiceLow)
+					.onChange(async (value) => {
+						this.plugin.settings.showDiceLow = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.dice-low-label"))
+			.setDesc(t("settings.dice-low-label-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Low")
+					.setValue(this.plugin.settings.diceLowLabel)
+					.onChange(async (value) => {
+						this.plugin.settings.diceLowLabel = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl).setName(t("settings.colors-header")).setHeading();
 		containerEl.createEl("p", {
-			text: "Any valid CSS color value is accepted: hex (#3b82f6), rgba(59,130,246,0.15), or a CSS variable (var(--color-accent)).",
+			text: t("settings.colors-desc"),
 			cls: "setting-item-description",
 		});
 

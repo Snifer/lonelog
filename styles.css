@@ -537,6 +537,19 @@ If your plugin does not need CSS, delete this file.
 	font-weight: 600;
 }
 
+.ll-scene {
+	color: var(--ll-action-color, #3b82f6);
+	font-weight: 700;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ll-header {
+	color: var(--ll-question-color, #8b5cf6);
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
 .ll-table {
 	color: var(--ll-table-color, #84cc16);
 	font-weight: 600;
@@ -583,6 +596,14 @@ If your plugin does not need CSS, delete this file.
 
 .theme-dark .ll-generator {
 	color: var(--ll-generator-color, #2dd4bf);
+}
+
+.theme-dark .ll-scene {
+	color: var(--ll-action-color, #60a5fa);
+}
+
+.theme-dark .ll-header {
+	color: var(--ll-question-color, #a78bfa);
 }
 /* ============================================================
    Lonelog Editor Highlighting (live preview)
@@ -645,6 +666,17 @@ If your plugin does not need CSS, delete this file.
 .ll-ed-generator {
 	color: var(--ll-generator-color, #0d9488);
 	font-weight: 600;
+}
+
+.ll-ed-scene {
+	color: var(--ll-action-color, #3b82f6);
+	font-weight: 700;
+}
+
+.ll-ed-header {
+	color: var(--ll-question-color, #8b5cf6);
+	font-weight: 800;
+	text-transform: uppercase;
 }
 
 .ll-ed-round {

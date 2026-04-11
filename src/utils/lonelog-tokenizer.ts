@@ -7,13 +7,20 @@
 // Token types and patterns
 // ---------------------------------------------------------------------------
 
-export type TokenType = 
+export type TokenType =
 	| "action"      // @ at line start
 	| "question"    // ? at line start
 	| "dice"        // d: at line start
 	| "consequence" // => at line start
 	| "result"      // -> anywhere
 	| "tag"         // [N:...] etc.
+	| "table"       // tbl: at line start
+	| "generator"   // gen: at line start
+	| "meta"        // (note: at line start
+	| "dialogue"    // Speaker: "..." at line start
+	| "scene"       // S1, T1-S1, ### S1 etc.
+	| "header"      // === Session === etc.
+	| "narrative"   // \--- or ---\ at line start
 	| "text";       // plain text
 
 export interface Token {
@@ -25,17 +32,24 @@ export interface Token {
 
 /** Line-start token patterns (checked in order) */
 const LINE_START_PATTERNS: Array<{ pattern: RegExp; type: Exclude<TokenType, "result" | "tag" | "text"> }> = [
-	{ pattern: /^@/,  type: "action"      },
-	{ pattern: /^\?/, type: "question"    },
-	{ pattern: /^d:/, type: "dice"        },
+	{ pattern: /^@(?:\([^)]+\))?/, type: "action" },
+	{ pattern: /^\?/, type: "question" },
+	{ pattern: /^d:/, type: "dice" },
 	{ pattern: /^=>/, type: "consequence" },
+	{ pattern: /^tbl:/i, type: "table" },
+	{ pattern: /^gen:/i, type: "generator" },
+	{ pattern: /^\(/, type: "meta" },
+	{ pattern: /^(\\---?|---\\|-{3,})/, type: "narrative" },
+	{ pattern: /^(?:###\s+)?T?\d*(?:-?S\d*(?:\.\d+|[a-z])?)/i, type: "scene" },
+	{ pattern: /^={3,}.+?={3,}/, type: "header" },
+	{ pattern: /^(?:PC|N|[^:]+?)\s?(?:\([^)]+\))?:\s*".*?"/i, type: "dialogue" },
 ];
 
 /** Result arrow pattern */
 const RESULT_ARROW_RE = /->/g;
 
-/** Bracket tag pattern */
-const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Track|Timer)):[^\]]*\]/g;
+/** Bracket tag pattern — supports multi-line and inline update suffix like [Clock:Name 0/6 ->2/6] */
+const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer)):[^\]]*(?:->\s*[\d/]+)?\]/g;
 
 // ---------------------------------------------------------------------------
 // Tokenizer

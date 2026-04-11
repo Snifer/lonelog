@@ -261,14 +261,16 @@ export class NotationParser {
 	private static parseProgress(content: string): ParsedProgress[] {
 		const progress: ParsedProgress[] = [];
 
-		// Event Clocks: [E:Name X/Y]
-		const clockRegex = /\[E:([^\]]+)\s+(\d+)\/(\d+)\]/g;
+		// Event Clocks: [E:Name X/Y] or [Clock:Name X/Y]
+		// Supports inline update: [Clock:Name X/Y ->newX/newY]
+		const clockRegex = /\[(?:E|Clock):([^\]]+?)\s+(\d+)\/(\d+)(?:\s*->\s*(\d+)\/(\d+))?\]/g;
 		let match;
 		while ((match = clockRegex.exec(content)) !== null) {
 			if (!match[1] || !match[2] || !match[3]) continue;
 			const name = match[1].trim();
-			const current = parseInt(match[2]);
-			const max = parseInt(match[3]);
+			// If inline update present, use the updated values
+			const current = match[4] !== undefined ? parseInt(match[4]) : parseInt(match[2]);
+			const max = match[5] !== undefined ? parseInt(match[5]) : parseInt(match[3]);
 			const line = this.getLineNumber(content, match.index);
 
 			progress.push({
@@ -281,12 +283,13 @@ export class NotationParser {
 		}
 
 		// Tracks: [Track:Name X/Y]
-		const trackRegex = /\[Track:([^\]]+)\s+(\d+)\/(\d+)\]/g;
+		// Supports inline update: [Track:Name X/Y ->newX/newY]
+		const trackRegex = /\[Track:([^\]]+?)\s+(\d+)\/(\d+)(?:\s*->\s*(\d+)\/(\d+))?\]/g;
 		while ((match = trackRegex.exec(content)) !== null) {
 			if (!match[1] || !match[2] || !match[3]) continue;
 			const name = match[1].trim();
-			const current = parseInt(match[2]);
-			const max = parseInt(match[3]);
+			const current = match[4] !== undefined ? parseInt(match[4]) : parseInt(match[2]);
+			const max = match[5] !== undefined ? parseInt(match[5]) : parseInt(match[3]);
 			const line = this.getLineNumber(content, match.index);
 
 			progress.push({
@@ -299,11 +302,12 @@ export class NotationParser {
 		}
 
 		// Timers: [Timer:Name X]
-		const timerRegex = /\[Timer:([^\]]+)\s+(\d+)\]/g;
+		// Supports inline update: [Timer:Name X ->newX]
+		const timerRegex = /\[Timer:([^\]]+?)\s+(\d+)(?:\s*->\s*(\d+))?\]/g;
 		while ((match = timerRegex.exec(content)) !== null) {
 			if (!match[1] || !match[2]) continue;
 			const name = match[1].trim();
-			const current = parseInt(match[2]);
+			const current = match[3] !== undefined ? parseInt(match[3]) : parseInt(match[2]);
 			const line = this.getLineNumber(content, match.index);
 
 			progress.push({
@@ -314,7 +318,15 @@ export class NotationParser {
 			});
 		}
 
-		return progress;
+		// Deduplicate: keep only the LAST occurrence of each type+name combo.
+		// When the same tracker appears multiple times across scenes/sessions,
+		// the panel shows only the most recent value.
+		const seen = new Map<string, ParsedProgress>();
+		for (const item of progress) {
+			seen.set(`${item.type}:${item.name}`, item);
+		}
+
+		return Array.from(seen.values());
 	}
 
 	/**
