@@ -5,7 +5,7 @@
 ![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/lonelog/total?logo)
 
 
-![Lonelog Obsidian Plug-in Logo](./assets/lonelog-logo.png)
+![Lonelog Obsidian Plug-in Logo](./assets/lonelog-obsidian-logo.png)
 
 **Lonelog for Obsidian** streamlines your solo TTRPG journaling by bringing the [Lonelog notation](https://zeruhur.itch.io/lonelog) standard directly into your vault. Focus on the story while keeping mechanics organized, visual, and fast.
 
