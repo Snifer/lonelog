@@ -10,6 +10,7 @@ import { LonelogAutoComplete } from "./utils/autocomplete";
 import { ProgressTrackerView, PROGRESS_VIEW_TYPE } from "./ui/progress-view";
 import { ThreadBrowserView, THREAD_VIEW_TYPE } from "./ui/thread-view";
 import { SceneNavigatorView, SCENE_NAV_TYPE } from "./ui/scene-nav";
+import { DashboardView, DASHBOARD_VIEW_TYPE } from "./ui/dashboard-view";
 import { lonelogBlockProcessor } from "./utils/reading-highlighter";
 import { lonelogEditorPlugin } from "./utils/editor-highlighter";
 
@@ -53,11 +54,16 @@ export default class LonelogPlugin extends Plugin {
 			SCENE_NAV_TYPE,
 			(leaf) => new SceneNavigatorView(leaf)
 		);
+		this.registerView(
+			DASHBOARD_VIEW_TYPE,
+			(leaf) => new DashboardView(leaf)
+		);
 
 		// Detach all views
 		this.app.workspace.detachLeavesOfType(PROGRESS_VIEW_TYPE);
 		this.app.workspace.detachLeavesOfType(THREAD_VIEW_TYPE);
 		this.app.workspace.detachLeavesOfType(SCENE_NAV_TYPE);
+		this.app.workspace.detachLeavesOfType(DASHBOARD_VIEW_TYPE);
 
 		// Register auto-completion
 		this.autoComplete = new LonelogAutoComplete(this.app);
@@ -277,6 +283,19 @@ export default class LonelogPlugin extends Plugin {
 		});
 
 		this.addCommand({
+			id: "insert-scene-return",
+			name: t("commands.insert-scene-return"),
+			editorCallback: (editor) => {
+				TemplateCommands.insertSceneMarker(
+					this.app,
+					editor,
+					this.settings.promptForSceneContext,
+					true
+				);
+			},
+		});
+
+		this.addCommand({
 			id: "toggle-code-block",
 			name: t("commands.toggle-code-block"),
 			editorCallback: (editor) => {
@@ -320,6 +339,14 @@ export default class LonelogPlugin extends Plugin {
 				void this.activateView(SCENE_NAV_TYPE);
 			},
 		});
+
+		this.addCommand({
+			id: "show-dashboard",
+			name: t("commands.show-dashboard"),
+			callback: () => {
+				void this.activateView(DASHBOARD_VIEW_TYPE);
+			},
+		});
 	}
 
 	async activateView(viewType: string) {
@@ -328,10 +355,16 @@ export default class LonelogPlugin extends Plugin {
 		let leaf = workspace.getLeavesOfType(viewType)[0];
 
 		if (!leaf) {
-			// Create new leaf in right sidebar
-			const rightLeaf = workspace.getRightLeaf(false);
-			if (!rightLeaf) return;
-			leaf = rightLeaf;
+			if (viewType === DASHBOARD_VIEW_TYPE) {
+				// Create new leaf in the main workspace (tab)
+				leaf = workspace.getLeaf('tab');
+			} else {
+				// Create new leaf in right sidebar
+				const rightLeaf = workspace.getRightLeaf(false);
+				if (!rightLeaf) return;
+				leaf = rightLeaf;
+			}
+			
 			await leaf.setViewState({
 				type: viewType,
 				active: true,

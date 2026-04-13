@@ -960,3 +960,223 @@ If your plugin does not need CSS, delete this file.
 	0% { transform: scale(0); opacity: 0; }
 	100% { transform: scale(1.2); opacity: 1; }
 }
+
+/* DASHBOARD STYLES */
+.lonelog-dashboard-container {
+    padding: 2rem;
+    height: 100%;
+    overflow-y: auto;
+    background-color: var(--background-primary);
+}
+
+.ll-dashboard-header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 1.5rem;
+}
+
+.ll-header-title-row h1 {
+    margin: 0 0 1rem 0;
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--text-normal) 0%, var(--text-muted) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.ll-header-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.ll-stat-card {
+    background-color: var(--background-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid var(--background-modifier-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ll-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.ll-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-accent);
+}
+
+.ll-stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.ll-dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 2rem;
+}
+
+@media (max-width: 900px) {
+    .ll-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ll-dashboard-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1.2rem;
+    border-left: 4px solid var(--text-accent);
+    padding-left: 0.8rem;
+}
+
+/* Timeline */
+.ll-timeline-list {
+    position: relative;
+    padding-left: 1rem;
+}
+
+.ll-timeline-session {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.ll-timeline-session::before {
+    content: '';
+    position: absolute;
+    left: -1rem;
+    top: 0;
+    bottom: -2rem;
+    width: 2px;
+    background-color: var(--background-modifier-border);
+}
+
+.ll-timeline-session:last-child::before {
+    bottom: 0;
+}
+
+.ll-timeline-session-header {
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    background-color: var(--background-secondary-alt);
+}
+
+.ll-timeline-session-header:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.ll-timeline-scene-item {
+    display: flex;
+    gap: 0.8rem;
+    padding: 0.6rem 0.8rem;
+    margin-left: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    border-left: 2px solid transparent;
+}
+
+.ll-timeline-scene-item:hover {
+    background-color: var(--background-modifier-hover);
+    border-left-color: var(--text-accent);
+}
+
+.ll-scene-num-badge {
+    color: var(--text-accent);
+    font-weight: bold;
+    font-size: 0.9rem;
+    min-width: 30px;
+}
+
+/* Progress Bars */
+.ll-progress-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.ll-progress-card {
+    background-color: var(--background-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.ll-progress-name {
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    font-size: 0.95rem;
+}
+
+.ll-progress-bar-container {
+    height: 8px;
+    background-color: var(--background-modifier-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+}
+
+.ll-progress-bar-fill {
+    height: 100%;
+    background-color: var(--text-accent);
+    border-radius: 4px;
+}
+
+.ll-type-clock .ll-progress-bar-fill { background-color: #f43f5e; }
+.ll-type-track .ll-progress-bar-fill { background-color: #10b981; }
+.ll-type-timer .ll-progress-bar-fill { background-color: #3b82f6; }
+
+/* Entities */
+.ll-entity-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.ll-entity-card {
+    background-color: var(--background-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    border-bottom: 3px solid var(--text-accent);
+    cursor: pointer;
+}
+
+.ll-entity-card:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.ll-tag-badge {
+    background-color: var(--background-modifier-border);
+    font-size: 0.75rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-right: 0.3rem;
+    display: inline-block;
+    margin-top: 0.4rem;
+}
+
+.ll-thread-status {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.ll-status-open { background-color: rgba(16, 185, 129, 0.2); color: #10b981; }
+.ll-status-closed { background-color: rgba(107, 114, 128, 0.2); color: #6b7280; }

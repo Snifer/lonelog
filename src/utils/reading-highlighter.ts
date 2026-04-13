@@ -95,10 +95,11 @@ export const lonelogBlockProcessor = (app: App, settings: LonelogSettings) => (
 						let currentIdx = absoluteLineNum + 1;
 						while (currentIdx < docLines.length) {
 							const nextLineText = docLines[currentIdx];
-							if (!nextLineText) {
+							if (nextLineText === undefined) {
 								currentIdx++;
 								continue;
 							}
+							
 							if (nextLineText.startsWith(" ") || nextLineText.startsWith("\t")) {
 								const newLine = RollManager.processLine(nextLineText, settings, tables);
 								if (newLine !== nextLineText) lineChanges.set(currentIdx, newLine);

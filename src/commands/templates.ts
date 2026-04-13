@@ -377,7 +377,46 @@ notes:
 			}
 		}
 
-		// Find the next session header after current position (if any)
+		// Look at the scene marker IMMEDIATELY before the cursor to detect current format
+		let lastSceneMarker = "";
+		const scenePattern = /^###\s+([A-Z\d.-]+)/;
+		for (let i = cursor.line; i >= 0; i--) {
+			// Stop if we hit a new session
+			if (i < currentSessionLine && currentSessionLine !== -1) break;
+			
+			const match = lines[i]?.match(scenePattern);
+			if (match && match[1]) {
+				lastSceneMarker = match[1];
+				break;
+			}
+		}
+
+		// Case A: Parallel Thread (T1-S5 -> T1-S6)
+		const threadMatch = lastSceneMarker.match(/^T(\d+)-S(\d+)/i);
+		if (threadMatch && threadMatch[1] && threadMatch[2]) {
+			const threadNum = threadMatch[1];
+			const sceneNum = parseInt(threadMatch[2]);
+			return `T${threadNum}-S${sceneNum + 1}`;
+		}
+
+		// Case B: Flashback (S3a -> S3b)
+		const flashbackMatch = lastSceneMarker.match(/^S(\d+)([a-z]+)/i);
+		if (flashbackMatch && flashbackMatch[1] && flashbackMatch[2]) {
+			const sceneNum = flashbackMatch[1];
+			const suffix = flashbackMatch[2];
+			// Increment last character of suffix
+			const lastChar = suffix.charCodeAt(suffix.length - 1);
+			const nextSuffix = suffix.substring(0, suffix.length - 1) + String.fromCharCode(lastChar + 1);
+			return `S${sceneNum}${nextSuffix}`;
+		}
+
+		// Case C: Standard Scene (S5 -> S6)
+		const standardMatch = lastSceneMarker.match(/^S(\d+)$/i);
+		if (standardMatch && standardMatch[1]) {
+			return `S${parseInt(standardMatch[1]) + 1}`;
+		}
+
+		// Fallback: search whole session (original logic)
 		let nextSessionLine = lines.length;
 		for (let i = cursor.line + 1; i < lines.length; i++) {
 			if (lines[i]?.startsWith("## Session ")) {
@@ -386,13 +425,10 @@ notes:
 			}
 		}
 
-		// Find last scene number between current session and next session
 		let lastScene = 0;
-		const sceneRegex = /^### S(\d+)/;
-
 		const startLine = currentSessionLine >= 0 ? currentSessionLine : 0;
 		for (let i = startLine; i < nextSessionLine; i++) {
-			const match = lines[i]?.match(sceneRegex);
+			const match = lines[i]?.match(/^### S(\d+)/);
 			if (match && match[1]) {
 				const sceneNum = parseInt(match[1]);
 				if (sceneNum > lastScene) {
@@ -405,14 +441,44 @@ notes:
 	}
 
 	/**
+	 * Detect the return scene number (S3b -> S4)
+	 */
+	static getReturnFromFlashbackNumber(editor: Editor): string {
+		const content = editor.getValue();
+		const cursor = editor.getCursor();
+		const lines = content.split("\n");
+
+		let lastSceneMarker = "";
+		for (let i = cursor.line; i >= 0; i--) {
+			const match = lines[i]?.match(/^###\s+([A-Z\d.-]+)/);
+			if (match && match[1]) {
+				lastSceneMarker = match[1];
+				break;
+			}
+		}
+
+		const flashbackMatch = lastSceneMarker.match(/^S(\d+)([a-z]+)/i);
+		if (flashbackMatch && flashbackMatch[1]) {
+			const baseNum = parseInt(flashbackMatch[1]);
+			return `S${baseNum + 1}`;
+		}
+
+		// If not in a flashback, just do standard increment
+		return this.getNextSceneNumber(editor);
+	}
+
+	/**
 	 * Insert scene marker with optional context prompt
 	 */
 	static insertSceneMarker(
 		app: App,
 		editor: Editor,
-		promptForContext: boolean
+		promptForContext: boolean,
+		isReturnFromFlashback: boolean = false
 	): void {
-		const sceneNum = this.getNextSceneNumber(editor);
+		const sceneNum = isReturnFromFlashback 
+			? this.getReturnFromFlashbackNumber(editor) 
+			: this.getNextSceneNumber(editor);
 
 		if (promptForContext) {
 			new SceneContextModal(app, (context) => {

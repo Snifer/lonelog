@@ -19,6 +19,7 @@ export default {
 		"init-lonelog-note": "Initialize Lonelog properties (YAML)",
 		"insert-session-header": "Insert session header",
 		"insert-scene-marker": "Insert scene marker",
+		"insert-scene-return": "Insert scene (Return from Flashback)",
 		"toggle-code-block": "Toggle code block wrapper",
 		"open-progress-tracker": "Open Progress Tracker",
 		"open-thread-browser": "Open Thread Browser",
@@ -35,7 +36,8 @@ export default {
 		"insert-dungeon-status": "Insert dungeon status [DUNGEON STATUS]",
 		"insert-item-tag": "Insert item tag [I:]",
 		"insert-wealth-tag": "Insert wealth tag [W:]",
-		"roll-dice-on-line": "Roll dice on current line"
+		"roll-dice-on-line": "Roll dice on current line",
+		"show-dashboard": "Show Lonelog Dashboard"
 	},
 	"settings": {
 		"header": "Lonelog notation settings",
@@ -111,6 +113,7 @@ export default {
 		"progress-title": "Lonelog progress",
 		"thread-title": "Lonelog threads",
 		"scene-title": "Lonelog scenes",
+		"dashboard-title": "Lonelog Dashboard",
 		"progress-header": "Progress tracker",
 		"story-header": "Story elements",
 		"scene-nav-header": "Scene navigator",

@@ -4,25 +4,12 @@
  */
 
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
+import { NotationParser, ParsedSession, ParsedScene } from "../utils/parser";
 
 export const SCENE_NAV_TYPE = "lonelog-scene-nav";
 
-interface Session {
-	number: number;
-	title: string;
-	line: number;
-	date?: string;
-	scenes: Scene[];
-}
-
-interface Scene {
-	number: string;
-	context: string;
-	line: number;
-}
-
 export class SceneNavigatorView extends ItemView {
-	private sessions: Session[] = [];
+	private sessions: ParsedSession[] = [];
 	private currentFile: TFile | null = null;
 	private lastRefreshId: number = 0;
 
@@ -89,7 +76,8 @@ export class SceneNavigatorView extends ItemView {
 		// If a new refresh has started, don't proceed with this one
 		if (refreshId !== this.lastRefreshId) return;
 
-		this.sessions = this.parseSessions(content);
+		const parsed = NotationParser.parse(content);
+		this.sessions = parsed.sessions;
 
 		// Render header
 		const header = container.createEl("div", {
@@ -121,74 +109,7 @@ export class SceneNavigatorView extends ItemView {
 		});
 	}
 
-	private parseSessions(content: string): Session[] {
-		const lines = content.split("\n");
-		const sessions: Session[] = [];
-		let currentSession: Session | null = null;
-
-		lines.forEach((line, index) => {
-			// Match session header: ## Session 1
-			const sessionMatch = line.match(/^##\s+Session\s+(\d+)(.*)$/);
-			if (sessionMatch && sessionMatch[1]) {
-				if (currentSession) {
-					sessions.push(currentSession);
-				}
-
-				const sessionNum = sessionMatch[1];
-				const sessionExtra = sessionMatch[2] || '';
-				
-				currentSession = {
-					number: parseInt(sessionNum),
-					title: sessionExtra.trim() || `Session ${sessionNum}`,
-					line: index,
-					scenes: [],
-				};
-
-				// Try to extract date from next line
-				if (index + 1 < lines.length) {
-					const nextLine = lines[index + 1];
-					if (nextLine) {
-						const dateMatch = nextLine.match(/Date:\s*(\d{4}-\d{2}-\d{2})/);
-						if (dateMatch && dateMatch[1]) {
-							currentSession.date = dateMatch[1];
-						}
-					}
-				}
-				return;
-			}
-
-			// Match scene marker: ### S1 *context*
-			const sceneMatch = line.match(/^###\s+(S[\d.a-zA-Z-]+)\s*\*([^*]*)\*/);
-			if (sceneMatch && sceneMatch[1] && currentSession) {
-				currentSession.scenes.push({
-					number: sceneMatch[1],
-					context: sceneMatch[2]?.trim() || "Scene",
-					line: index,
-				});
-				return;
-			}
-
-			// Also match simpler scene format: ### S1
-			const simpleSceneMatch = line.match(/^###\s+(S[\d.a-zA-Z-]+)(?:\s+(.*))?$/);
-			if (simpleSceneMatch && simpleSceneMatch[1] && currentSession && !sceneMatch) {
-				const sceneNumber = simpleSceneMatch[1];
-				currentSession.scenes.push({
-					number: sceneNumber,
-					context: simpleSceneMatch[2]?.trim() || "Scene",
-					line: index,
-				});
-			}
-		});
-
-		// Don't forget the last session
-		if (currentSession) {
-			sessions.push(currentSession);
-		}
-
-		return sessions;
-	}
-
-	private renderSession(container: HTMLElement, session: Session): void {
+	private renderSession(container: HTMLElement, session: ParsedSession): void {
 		const sessionEl = container.createEl("div", {
 			cls: "lonelog-scene-session",
 		});
@@ -241,7 +162,7 @@ export class SceneNavigatorView extends ItemView {
 		}
 	}
 
-	private renderScene(container: HTMLElement, scene: Scene): void {
+	private renderScene(container: HTMLElement, scene: ParsedScene): void {
 		const sceneEl = container.createEl("div", {
 			cls: "lonelog-scene-item",
 		});

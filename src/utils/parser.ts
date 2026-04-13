@@ -43,12 +43,27 @@ export interface ParsedProgress {
 	line: number;
 }
 
+export interface ParsedScene {
+	number: string;
+	context: string;
+	line: number;
+}
+
+export interface ParsedSession {
+	number: number;
+	title: string;
+	line: number;
+	date?: string;
+	scenes: ParsedScene[];
+}
+
 export interface ParsedElements {
 	npcs: Map<string, ParsedNPC>;
 	locations: Map<string, ParsedLocation>;
 	threads: Map<string, ParsedThread>;
 	pcs: Map<string, ParsedPC>;
 	progress: ParsedProgress[];
+	sessions: ParsedSession[];
 }
 
 export class NotationParser {
@@ -72,8 +87,9 @@ export class NotationParser {
 		const threads = this.parseThreads(content);
 		const pcs = this.parsePCs(content);
 		const progress = this.parseProgress(content);
+		const sessions = this.parseSessions(content);
 
-		const result = { npcs, locations, threads, pcs, progress };
+		const result = { npcs, locations, threads, pcs, progress, sessions };
 
 		// Update cache
 		this.cache = { content, result };
@@ -327,6 +343,82 @@ export class NotationParser {
 		}
 
 		return Array.from(seen.values());
+	}
+
+	/**
+	 * Parse sessions and scenes: ## Session X, ### S1
+	 */
+	private static parseSessions(content: string): ParsedSession[] {
+		const lines = content.split("\n");
+		const sessions: ParsedSession[] = [];
+		let currentSession: ParsedSession | null = null;
+
+		lines.forEach((line, index) => {
+			// Match session header: ## Session 1
+			const sessionMatch = line.match(/^##\s+Session\s+(\d+)(.*)$/);
+			if (sessionMatch && sessionMatch[1]) {
+				if (currentSession) {
+					sessions.push(currentSession);
+				}
+
+				const sessionNum = sessionMatch[1];
+				const sessionExtra = sessionMatch[2] || "";
+
+				currentSession = {
+					number: parseInt(sessionNum),
+					title: sessionExtra.trim() || `Session ${sessionNum}`,
+					line: index,
+					scenes: [],
+				};
+
+				// Try to extract date from next line
+				if (index + 1 < lines.length) {
+					const nextLine = lines[index + 1];
+					if (nextLine) {
+						const dateMatch = nextLine.match(/Date:\s*(\d{4}-\d{2}-\d{2})/);
+						if (dateMatch && dateMatch[1]) {
+							currentSession.date = dateMatch[1];
+						}
+					}
+				}
+				return;
+			}
+
+			// Match scene marker: ### S1 *context* or ### T1-S1 *context*
+			// Regex supports S1, S1a, T1-S1, etc.
+			const sceneMatch = line.match(/^###\s+([A-Z\d.-]+)\s*\*([^*]*)\*/);
+			if (sceneMatch && sceneMatch[1] && currentSession) {
+				currentSession.scenes.push({
+					number: sceneMatch[1],
+					context: sceneMatch[2]?.trim() || "Scene",
+					line: index,
+				});
+				return;
+			}
+
+			// Also match simpler scene format: ### S1
+			const simpleSceneMatch = line.match(/^###\s+([A-Z\d.-]+)(?:\s+(.*))?$/);
+			if (
+				simpleSceneMatch &&
+				simpleSceneMatch[1] &&
+				currentSession &&
+				!sceneMatch
+			) {
+				const sceneNumber = simpleSceneMatch[1];
+				currentSession.scenes.push({
+					number: sceneNumber,
+					context: simpleSceneMatch[2]?.trim() || "Scene",
+					line: index,
+				});
+			}
+		});
+
+		// Don't forget the last session
+		if (currentSession) {
+			sessions.push(currentSession);
+		}
+
+		return sessions;
 	}
 
 	/**
