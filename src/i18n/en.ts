@@ -136,6 +136,8 @@ export default {
 		"foes-label": "Foes & combatants",
 		"rounds-label": "Round journal",
 		"dungeon-header": "Dungeon status",
-		"inventory-header": "Inventory & wealth"
+		"inventory-header": "Inventory & wealth",
+		"tags": "Tags",
+		"no-tags": "No tags found"
 	}
 };

@@ -133,6 +133,8 @@ export default {
 		"threads": "Hilos",
 		"session": "Sesión",
 		"rolls-header": "Tiradas y Tablas Recientes",
-		"no-rolls": "No se encontraron tiradas ni resultados de tablas"
+		"no-rolls": "No se encontraron tiradas ni resultados de tablas",
+		"tags": "Etiquetas",
+		"no-tags": "No hay etiquetas"
 	}
 };

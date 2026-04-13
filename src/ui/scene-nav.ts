@@ -24,6 +24,7 @@ interface Scene {
 export class SceneNavigatorView extends ItemView {
 	private sessions: Session[] = [];
 	private currentFile: TFile | null = null;
+	private lastRefreshId: number = 0;
 
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
@@ -42,11 +43,8 @@ export class SceneNavigatorView extends ItemView {
 	}
 
 	onOpen(): Promise<void> {
-		const container = this.containerEl.children[1];
-		if (!container) return Promise.resolve();
-		if (!(container instanceof HTMLElement)) return Promise.resolve();
-		container.empty();
-		container.addClass("lonelog-scene-container");
+		this.contentEl.empty();
+		this.contentEl.addClass("lonelog-scene-container");
 
 		// Listen for active file changes
 		this.registerEvent(
@@ -69,9 +67,8 @@ export class SceneNavigatorView extends ItemView {
 	}
 
 	async refresh(): Promise<void> {
-		const container = this.containerEl.children[1];
-		if (!container) return;
-		if (!(container instanceof HTMLElement)) return;
+		const refreshId = ++this.lastRefreshId;
+		const container = this.contentEl;
 		container.empty();
 
 		// Get active file
@@ -88,6 +85,10 @@ export class SceneNavigatorView extends ItemView {
 
 		// Read and parse file
 		const content = await this.app.vault.read(activeFile);
+		
+		// If a new refresh has started, don't proceed with this one
+		if (refreshId !== this.lastRefreshId) return;
+
 		this.sessions = this.parseSessions(content);
 
 		// Render header

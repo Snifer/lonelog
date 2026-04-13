@@ -156,6 +156,7 @@ export default class LonelogPlugin extends Plugin {
 			},
 		});
 
+
 		this.addCommand({
 			id: "insert-consequence",
 			name: t("commands.insert-consequence"),

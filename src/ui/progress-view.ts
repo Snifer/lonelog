@@ -11,6 +11,7 @@ export const PROGRESS_VIEW_TYPE = "lonelog-progress-view";
 export class ProgressTrackerView extends ItemView {
 	private progressElements: ParsedProgress[] = [];
 	private currentFile: TFile | null = null;
+	private lastRefreshId: number = 0;
 
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
@@ -29,11 +30,8 @@ export class ProgressTrackerView extends ItemView {
 	}
 
 	onOpen(): Promise<void> {
-		const container = this.containerEl.children[1];
-		if (!container) return Promise.resolve();
-		if (!(container instanceof HTMLElement)) return Promise.resolve();
-		container.empty();
-		container.addClass("lonelog-progress-container");
+		this.contentEl.empty();
+		this.contentEl.addClass("lonelog-progress-container");
 
 		// Listen for active file changes
 		this.registerEvent(
@@ -56,9 +54,8 @@ export class ProgressTrackerView extends ItemView {
 	}
 
 	async refresh(): Promise<void> {
-		const container = this.containerEl.children[1];
-		if (!container) return;
-		if (!(container instanceof HTMLElement)) return;
+		const refreshId = ++this.lastRefreshId;
+		const container = this.contentEl;
 		container.empty();
 
 		// Get active file
@@ -75,6 +72,10 @@ export class ProgressTrackerView extends ItemView {
 
 		// Read and parse file
 		const content = await this.app.vault.read(activeFile);
+		
+		// If a new refresh has started, don't proceed with this one
+		if (refreshId !== this.lastRefreshId) return;
+
 		const parsed = NotationParser.parse(content);
 		this.progressElements = parsed.progress;
 

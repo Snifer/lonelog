@@ -9,6 +9,7 @@ import { App, MarkdownPostProcessorContext, TFile } from "obsidian";
 import { tokenizeLine, getTokenClass } from "./lonelog-tokenizer";
 import { DiceRoller } from "./dice-roller";
 import { TableResolver } from "./table-resolver";
+import { RollManager } from "./roll-manager";
 import { LonelogSettings } from "../settings";
 
 /**
@@ -52,10 +53,12 @@ export const lonelogBlockProcessor = (app: App, settings: LonelogSettings) => (
 		const trimmedLine = rawLine.trimStart().toLowerCase();
 		if (
 			settings.enableDiceRoller &&
-			(trimmedLine.startsWith("d:") ||
+		(trimmedLine.startsWith("d:") ||
 				trimmedLine.startsWith("?") ||
 				trimmedLine.startsWith("tbl:") ||
-				trimmedLine.startsWith("gen:"))
+				trimmedLine.startsWith("gen:") ||
+				rawLine.startsWith(" ") || 
+				rawLine.startsWith("\t"))
 		) {
 			const notation = DiceRoller.extractNotation(rawLine);
 			if (notation) {
@@ -74,64 +77,55 @@ export const lonelogBlockProcessor = (app: App, settings: LonelogSettings) => (
 					if (!(file instanceof TFile)) return;
 
 					const absoluteLineNum = section.lineStart + 1 + currentLineIndex;
+
+					// Read file to parse tables and detect blocks
 					const content = await app.vault.read(file);
 					const docLines = content.split("\n");
 					const rawLineAtRoll = docLines[absoluteLineNum];
-
 					if (rawLineAtRoll === undefined) return;
 
-					let notationToRoll = notation;
-					let tableOutcome: string | undefined;
+					const tables = TableResolver.parseTables(content);
+					const isGenHeader = rawLineAtRoll.trimStart().toLowerCase().startsWith("gen:");
+					
+					// We'll collect all changes (line index -> new text)
+					const lineChanges = new Map<number, string>();
 
-					// If this is a table roll, try to resolve it
-					if (rawLineAtRoll.trimStart().toLowerCase().startsWith("tbl:")) {
-						const tables = TableResolver.parseTables(content);
-						const tblMatch = /tbl:\s*(.+?)\s*(\d*d(?:\d+|f))/i.exec(rawLineAtRoll);
-						
-						if (tblMatch && tblMatch[1] && tblMatch[2]) {
-							const tableName = tblMatch[1].trim().toLowerCase();
-							const dice = tblMatch[2];
-							const table = tables.get(tableName);
-							
-							if (table) {
-								notationToRoll = dice;
-								const rollResult = DiceRoller.roll(dice);
-								if (rollResult) {
-									tableOutcome = TableResolver.resolveEntry(table, rollResult.total) || undefined;
-									
-									await app.vault.process(file, (data) => {
-										const lines = data.split("\n");
-										lines[absoluteLineNum] = DiceRoller.formatResult(rawLineAtRoll, rollResult, {
-											detailMode: settings.diceDetailMode,
-											highLabel: settings.diceHighLabel,
-											showHigh: settings.showDiceHigh,
-											lowLabel: settings.diceLowLabel,
-											showLow: settings.showDiceLow,
-											tableOutcome
-										});
-										return lines.join("\n");
-									});
-									return;
-								}
+					if (isGenHeader) {
+						// Process header and all indented children
+						let currentIdx = absoluteLineNum + 1;
+						while (currentIdx < docLines.length) {
+							const nextLineText = docLines[currentIdx];
+							if (!nextLineText) {
+								currentIdx++;
+								continue;
 							}
+							if (nextLineText.startsWith(" ") || nextLineText.startsWith("\t")) {
+								const newLine = RollManager.processLine(nextLineText, settings, tables);
+								if (newLine !== nextLineText) lineChanges.set(currentIdx, newLine);
+							} else if (nextLineText.trim() === "") {
+								// skip
+							} else {
+								break;
+							}
+							currentIdx++;
 						}
+					} else {
+						// Just process this one line
+						const newLine = RollManager.processLine(rawLineAtRoll, settings, tables);
+						if (newLine !== rawLineAtRoll) lineChanges.set(absoluteLineNum, newLine);
 					}
 
-					// Standard roll
-					const result = DiceRoller.roll(notationToRoll);
-					if (result) {
-						await app.vault.process(file, (data) => {
-							const lines = data.split("\n");
-							lines[absoluteLineNum] = DiceRoller.formatResult(rawLineAtRoll, result, {
-								detailMode: settings.diceDetailMode,
-								highLabel: settings.diceHighLabel,
-								showHigh: settings.showDiceHigh,
-								lowLabel: settings.diceLowLabel,
-								showLow: settings.showDiceLow,
-							});
-							return lines.join("\n");
+					// If no changes, stop here
+					if (lineChanges.size === 0) return;
+
+					// Apply all changes in a single atomic process call
+					await app.vault.process(file, (data) => {
+						const lines = data.split("\n");
+						lineChanges.forEach((newText, idx) => {
+							if (idx < lines.length) lines[idx] = newText;
 						});
-					}
+						return lines.join("\n");
+					});
 				};
 
 				btn.addEventListener("click", (e) => {

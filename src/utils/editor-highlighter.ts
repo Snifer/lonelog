@@ -10,6 +10,7 @@ import { EditorState } from "@codemirror/state";
 import { tokenizeLine, getTokenClass } from "./lonelog-tokenizer";
 import { DiceRoller } from "./dice-roller";
 import { TableResolver } from "./table-resolver";
+import { RollManager } from "./roll-manager";
 import { LonelogSettings } from "../settings";
 
 // ---------------------------------------------------------------------------
@@ -88,56 +89,38 @@ class DiceWidget extends WidgetType {
 		const line = view.state.doc.lineAt(pos);
 		const lineText = line.text;
 		
-		let notationToRoll = this.notation;
-		let tableOutcome: string | undefined;
+		// 1. Detection: Are we on a gen: header?
+		const isGenHeader = lineText.trimStart().toLowerCase().startsWith("gen:");
+		const fullContent = view.state.doc.toString();
+		const tables = TableResolver.parseTables(fullContent);
 
-		// If this is a table roll, try to resolve it
-		if (lineText.trimStart().toLowerCase().startsWith("tbl:")) {
-			const fullContent = view.state.doc.toString();
-			const tables = TableResolver.parseTables(fullContent);
-			
-			// Robust pattern: tbl: Name Dice (handles cases where Name contains 'd')
-			const tblMatch = /tbl:\s*(.+?)\s*(\d*d(?:\d+|f))/i.exec(lineText);
-			if (tblMatch && tblMatch[1] && tblMatch[2]) {
-				const tableName = tblMatch[1].trim().toLowerCase();
-				const dice = tblMatch[2];
-				const table = tables.get(tableName);
+		if (isGenHeader) {
+			// Roll all indented lines below
+			let currentIdx = line.number + 1;
+			while (currentIdx <= view.state.doc.lines) {
+				const nextLine = view.state.doc.line(currentIdx);
+				const nextLineText = nextLine.text;
 				
-				if (table) {
-					notationToRoll = dice;
-					const rollResult = DiceRoller.roll(dice);
-					if (rollResult) {
-						tableOutcome = TableResolver.resolveEntry(table, rollResult.total) || undefined;
-						
-						const newLineText = DiceRoller.formatResult(lineText, rollResult, {
-							detailMode: this.settings.diceDetailMode,
-							highLabel: this.settings.diceHighLabel,
-							showHigh: this.settings.showDiceHigh,
-							lowLabel: this.settings.diceLowLabel,
-							showLow: this.settings.showDiceLow,
-							tableOutcome
-						});
-
+				if (nextLineText.startsWith(" ") || nextLineText.startsWith("\t")) {
+					const newLineText = RollManager.processLine(nextLineText, this.settings, tables);
+					if (newLineText !== nextLineText) {
 						view.dispatch({
-							changes: { from: line.from, to: line.to, insert: newLineText }
+							changes: { from: nextLine.from, to: nextLine.to, insert: newLineText }
 						});
-						return;
 					}
+				} else if (nextLineText.trim() === "") {
+					// Skip empty
+				} else {
+					break;
 				}
+				currentIdx++;
 			}
+			return;
 		}
 
-		// Standard roll (non-table or table not found)
-		const result = DiceRoller.roll(notationToRoll);
-		if (result) {
-			const newLineText = DiceRoller.formatResult(lineText, result, {
-				detailMode: this.settings.diceDetailMode,
-				highLabel: this.settings.diceHighLabel,
-				showHigh: this.settings.showDiceHigh,
-				lowLabel: this.settings.diceLowLabel,
-				showLow: this.settings.showDiceLow,
-			});
-
+		// 2. Otherwise process just the current line
+		const newLineText = RollManager.processLine(lineText, this.settings, tables);
+		if (newLineText !== lineText) {
 			view.dispatch({
 				changes: { from: line.from, to: line.to, insert: newLineText }
 			});
@@ -206,7 +189,9 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
 					(trimmedLine.startsWith("d:") ||
 						trimmedLine.startsWith("?") ||
 						trimmedLine.startsWith("tbl:") ||
-						trimmedLine.startsWith("gen:"))
+						trimmedLine.startsWith("gen:") ||
+						lineText.startsWith(" ") || 
+						lineText.startsWith("\t"))
 				) {
 					const notation = DiceRoller.extractNotation(lineText);
 					if (notation) {

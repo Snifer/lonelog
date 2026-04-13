@@ -125,16 +125,22 @@ export class DiceRoller {
 	 * Example: "tbl: d100=42" returns "d100"
 	 */
 	static extractNotation(line: string): string | null {
-		// First, try the standard prefixes
-		const dMatch = /(?:d:|\?|tbl:|gen:)\s*([^->\n]+)/i.exec(line);
+		// First, try the standard prefixes (anchored to start of line or with space prefix)
+		const dMatch = /^\s*(?:d:|\?|tbl:|gen:)\s*([^->\n]+)/i.exec(line);
 		let basePart: string | null = null;
 		
 		if (dMatch && dMatch[1]) {
 			basePart = dMatch[1].trim();
 		} else {
-			// Otherwise, look for complex dice notation (e.g. 1d20+5, 4df, 15>=10) in the line
-			const complexDiceMatch = /((?:\d*d(?:\d+|f)|[+-]\s*\d+)(?:\s*(?:[+-]|vs|>=|<=|≥|≤)\s*(?:\d*d(?:\d+|f)|\d+))*(\s*[SF])?)/i.exec(line);
-			basePart = complexDiceMatch && complexDiceMatch[1] ? complexDiceMatch[1] : null;
+			// Look for indented label lines: "  Apariencia: d3"
+			const labelMatch = /^\s*([^:(\[\]]+):\s*([^->\n=]+)/.exec(line);
+			if (labelMatch && labelMatch[1] && labelMatch[2]) {
+				basePart = labelMatch[2].trim();
+			} else {
+				// Otherwise, look for complex dice notation
+				const complexDiceMatch = /((?:\d*d(?:\d+|f)|[+-]\s*\d+)(?:\s*(?:[+-]|vs|>=|<=|≥|≤)\s*(?:\d*d(?:\d+|f)|\d+))*(\s*[SF])?)/i.exec(line);
+				basePart = complexDiceMatch && complexDiceMatch[1] ? complexDiceMatch[1] : null;
+			}
 		}
 
 		if (!basePart) return null;
@@ -172,13 +178,19 @@ export class DiceRoller {
 			tableOutcome
 		} = options;
 
-		// 1. Identify the prefix (d:, ?, etc.)
-		const dMatch = /(d:|\?|tbl:|gen:)\s*/i.exec(line);
-		const prefix = dMatch ? dMatch[0] : "";
+		// 1. Identify the prefix (d:, ?, etc.) OR a Label:
+		const dMatch = /^\s*(d:|\?|tbl:|gen:)\s*/i.exec(line);
+		let prefix = dMatch ? dMatch[0] : "";
 		
-		// Strip any existing outcome (everything after ->) from the line before processing
+		// If no standard prefix, check if it's a Label: format
+		if (!prefix) {
+			const labelMatch = /^(\s*[^:(\[\]]+:\s*)/i.exec(line);
+			if (labelMatch) prefix = labelMatch[0];
+		}
+
+		// Strip any existing outcome (everything after ->)
 		const arrowIndex = line.indexOf("->");
-		const lineToProcess = arrowIndex !== -1 ? line.substring(0, arrowIndex).trim() : line;
+		const lineToProcess = arrowIndex !== -1 ? line.substring(0, arrowIndex) : line;
 		const contentAfterPrefix = lineToProcess.substring(prefix.length);
 
 		// 2. Split into segments by comma followed by a new notation

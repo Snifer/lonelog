@@ -2,7 +2,8 @@ import { App, Editor } from "obsidian";
 import { LonelogSettings } from "../settings";
 import { TrackModal } from "./templates";
 import { DiceRoller } from "../utils/dice-roller";
-import { TableResolver } from "../utils/table-resolver";
+import { TableResolver, TableDefinition } from "../utils/table-resolver";
+import { RollManager } from "../utils/roll-manager";
 
 export class NotationCommands {
 	// Single symbol insertions
@@ -249,57 +250,53 @@ export class NotationCommands {
 		const lineNum = cursor.line;
 		const lineText = editor.getLine(lineNum);
 
-		const notation = DiceRoller.extractNotation(lineText);
-		if (!notation) return;
+		const fullContent = editor.getValue();
+		const tables = TableResolver.parseTables(fullContent);
 
-		let notationToRoll = notation;
-		let tableOutcome: string | undefined;
+		// 1. Detection: Are we on a gen: header?
+		const isGenHeader = lineText.trimStart().toLowerCase().startsWith("gen:");
 
-		// If this is a table roll, try to resolve it
-		if (lineText.trimStart().toLowerCase().startsWith("tbl:")) {
-			const fullContent = editor.getValue();
-			const tables = TableResolver.parseTables(fullContent);
-			
-			// Robust pattern: tbl: Name Dice (handles cases where Name contains 'd')
-			const tblMatch = /tbl:\s*(.+?)\s*(\d*d(?:\d+|f))/i.exec(lineText);
-			if (tblMatch && tblMatch[1] && tblMatch[2]) {
-				const tableName = tblMatch[1].trim().toLowerCase();
-				const dice = tblMatch[2];
-				const table = tables.get(tableName);
-				
-				if (table) {
-					notationToRoll = dice;
-					const rollResult = DiceRoller.roll(dice);
-					if (rollResult) {
-						tableOutcome = TableResolver.resolveEntry(table, rollResult.total) || undefined;
-						
-						const newLineText = DiceRoller.formatResult(lineText, rollResult, {
-							detailMode: settings.diceDetailMode,
-							highLabel: settings.diceHighLabel,
-							showHigh: settings.showDiceHigh,
-							lowLabel: settings.diceLowLabel,
-							showLow: settings.showDiceLow,
-							tableOutcome
-						});
-
-						editor.setLine(lineNum, newLineText);
-						return;
+		if (isGenHeader) {
+			// Roll all indented lines below
+			let currentIdx = lineNum + 1;
+			while (currentIdx < editor.lineCount()) {
+				const nextLineText = editor.getLine(currentIdx);
+				// If indented, it's a generator sub-line
+				if (nextLineText.startsWith(" ") || nextLineText.startsWith("\t")) {
+					const newLineText = RollManager.processLine(nextLineText, settings, tables);
+					if (newLineText !== nextLineText) {
+						editor.setLine(currentIdx, newLineText);
 					}
+				} else if (nextLineText.trim() === "") {
+					// Skip empty lines but keep looking
+				} else {
+					// Reached end of block
+					break;
 				}
+				currentIdx++;
 			}
+			return;
 		}
 
-		// Standard roll (non-table or table not found)
-		const result = DiceRoller.roll(notationToRoll);
-		if (result) {
-			const newLineText = DiceRoller.formatResult(lineText, result, {
-				detailMode: settings.diceDetailMode,
-				highLabel: settings.diceHighLabel,
-				showHigh: settings.showDiceHigh,
-				lowLabel: settings.diceLowLabel,
-				showLow: settings.showDiceLow,
-			});
+		// 2. Otherwise process just the current line
+		const newLineText = RollManager.processLine(lineText, settings, tables);
+		if (newLineText !== lineText) {
+			editor.setLine(lineNum, newLineText);
+		}
+	}
 
+	/**
+	 * @deprecated Use RollManager.processLine instead. Only kept for backward compatibility if needed within this class.
+	 */
+	private static processSingleLine(
+		editor: Editor, 
+		lineNum: number, 
+		settings: LonelogSettings,
+		tables: Map<string, TableDefinition>
+	): void {
+		const lineText = editor.getLine(lineNum);
+		const newLineText = RollManager.processLine(lineText, settings, tables);
+		if (newLineText !== lineText) {
 			editor.setLine(lineNum, newLineText);
 		}
 	}

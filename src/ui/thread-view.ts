@@ -4,6 +4,7 @@
  */
 
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
+import { t } from "../i18n/i18n";
 import {
 	NotationParser,
 	ParsedElements,
@@ -18,6 +19,7 @@ export const THREAD_VIEW_TYPE = "lonelog-thread-view";
 export class ThreadBrowserView extends ItemView {
 	private parsedElements: ParsedElements | null = null;
 	private currentFile: TFile | null = null;
+	private lastRefreshId: number = 0;
 
 	constructor(leaf: WorkspaceLeaf) {
 		super(leaf);
@@ -28,7 +30,7 @@ export class ThreadBrowserView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Lonelog threads";
+		return t("views.thread-title");
 	}
 
 	getIcon(): string {
@@ -36,11 +38,8 @@ export class ThreadBrowserView extends ItemView {
 	}
 
 	onOpen(): Promise<void> {
-		const container = this.containerEl.children[1];
-		if (!container) return Promise.resolve();
-		if (!(container instanceof HTMLElement)) return Promise.resolve();
-		container.empty();
-		container.addClass("lonelog-thread-container");
+		this.contentEl.empty();
+		this.contentEl.addClass("lonelog-thread-container");
 
 		// Listen for active file changes
 		this.registerEvent(
@@ -63,16 +62,15 @@ export class ThreadBrowserView extends ItemView {
 	}
 
 	async refresh(): Promise<void> {
-		const container = this.containerEl.children[1];
-		if (!container) return;
-		if (!(container instanceof HTMLElement)) return;
+		const refreshId = ++this.lastRefreshId;
+		const container = this.contentEl;
 		container.empty();
 
 		// Get active file
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
 			container.createEl("div", {
-				text: "No active file",
+				text: t("views.no-active-file"),
 				cls: "lonelog-empty-state",
 			});
 			return;
@@ -82,13 +80,17 @@ export class ThreadBrowserView extends ItemView {
 
 		// Read and parse file
 		const content = await this.app.vault.read(activeFile);
+
+		// If a new refresh has started, don't proceed with this one
+		if (refreshId !== this.lastRefreshId) return;
+
 		this.parsedElements = NotationParser.parse(content);
 
 		// Render header
 		const header = container.createEl("div", {
 			cls: "lonelog-thread-header",
 		});
-		header.createEl("h4", { text: "Story elements" });
+		header.createEl("h4", { text: t("views.story-header") });
 
 		const totalCount =
 			this.parsedElements.npcs.size +
@@ -97,14 +99,14 @@ export class ThreadBrowserView extends ItemView {
 			this.parsedElements.pcs.size;
 
 		header.createEl("span", {
-			text: `${totalCount} items`,
+			text: `${totalCount} ${t("views.items")}`,
 			cls: "lonelog-count",
 		});
 
 		// Check if empty
 		if (totalCount === 0) {
 			container.createEl("div", {
-				text: "No story elements found",
+				text: t("views.no-story"),
 				cls: "lonelog-empty-state",
 			});
 			return;
@@ -129,6 +131,9 @@ export class ThreadBrowserView extends ItemView {
 		if (this.parsedElements.threads.size > 0) {
 			this.renderThreadSection(container, this.parsedElements.threads);
 		}
+
+		// Phase 4: Tags navigation
+		this.renderTagSection(container, this.parsedElements);
 	}
 
 	private renderPCSection(
@@ -142,7 +147,7 @@ export class ThreadBrowserView extends ItemView {
 		const sectionHeader = section.createEl("div", {
 			cls: "lonelog-thread-section-header",
 		});
-		sectionHeader.createEl("h5", { text: "Player characters" });
+		sectionHeader.createEl("h5", { text: t("views.pcs") });
 		sectionHeader.createEl("span", {
 			text: `${pcs.size}`,
 			cls: "lonelog-section-count",
@@ -168,7 +173,7 @@ export class ThreadBrowserView extends ItemView {
 		const sectionHeader = section.createEl("div", {
 			cls: "lonelog-thread-section-header",
 		});
-		sectionHeader.createEl("h5", { text: "Npcs" });
+		sectionHeader.createEl("h5", { text: t("views.npcs") });
 		sectionHeader.createEl("span", {
 			text: `${npcs.size}`,
 			cls: "lonelog-section-count",
@@ -194,7 +199,7 @@ export class ThreadBrowserView extends ItemView {
 		const sectionHeader = section.createEl("div", {
 			cls: "lonelog-thread-section-header",
 		});
-		sectionHeader.createEl("h5", { text: "Locations" });
+		sectionHeader.createEl("h5", { text: t("views.locations") });
 		sectionHeader.createEl("span", {
 			text: `${locations.size}`,
 			cls: "lonelog-section-count",
@@ -225,7 +230,7 @@ export class ThreadBrowserView extends ItemView {
 		const sectionHeader = section.createEl("div", {
 			cls: "lonelog-thread-section-header",
 		});
-		sectionHeader.createEl("h5", { text: "Threads" });
+		sectionHeader.createEl("h5", { text: t("views.threads") });
 		sectionHeader.createEl("span", {
 			text: `${threads.size}`,
 			cls: "lonelog-section-count",
@@ -296,6 +301,81 @@ export class ThreadBrowserView extends ItemView {
 				});
 			});
 		}
+	}
+
+	private renderTagSection(
+		container: HTMLElement,
+		elements: ParsedElements
+	): void {
+		const tagMap = new Map<string, Array<{ name: string; type: string }>>();
+
+		const addTags = (tags: string[], name: string, type: string) => {
+			tags.forEach((tag) => {
+				if (!tagMap.has(tag)) tagMap.set(tag, []);
+				const exists = tagMap.get(tag)!.some(e => e.name === name);
+				if (!exists) {
+					tagMap.get(tag)!.push({ name, type });
+				}
+			});
+		};
+
+		elements.npcs.forEach((val, key) => addTags(val.tags, key, "npc"));
+		elements.locations.forEach((val, key) => addTags(val.tags, key, "location"));
+		elements.pcs.forEach((val, key) => addTags(val.tags, key, "pc"));
+
+		if (tagMap.size === 0) return;
+
+		const section = container.createEl("div", {
+			cls: "lonelog-thread-section",
+		});
+
+		const sectionHeader = section.createEl("div", {
+			cls: "lonelog-thread-section-header",
+		});
+		sectionHeader.createEl("h5", { text: t("views.tags") });
+		sectionHeader.createEl("span", {
+			text: `${tagMap.size}`,
+			cls: "lonelog-section-count",
+		});
+
+		const tagCloud = section.createEl("div", { cls: "lonelog-tag-cloud" });
+
+		Array.from(tagMap.keys())
+			.sort((a, b) => a.localeCompare(b))
+			.forEach((tagName) => {
+				const tagContainer = tagCloud.createEl("div", {
+					cls: "lonelog-tag-group",
+				});
+				tagContainer.createEl("span", {
+					text: tagName,
+					cls: "lonelog-tag-badge",
+				});
+
+				const entities = tagMap.get(tagName)!;
+				const entityList = tagContainer.createEl("div", {
+					cls: "lonelog-tag-entities",
+				});
+				entities.forEach((entity) => {
+					const entityBtn = entityList.createEl("button", {
+						text: entity.name,
+						cls: `lonelog-tag-entity-btn lonelog-entity-${entity.type}`,
+					});
+					entityBtn.onclick = () => {
+						let mentions: number[] = [];
+						if (entity.type === "npc")
+							mentions = elements.npcs.get(entity.name)?.mentions || [];
+						else if (entity.type === "location")
+							mentions =
+								elements.locations.get(entity.name)?.mentions || [];
+						else if (entity.type === "pc")
+							mentions = elements.pcs.get(entity.name)?.mentions || [];
+
+						if (mentions.length > 0) {
+							this.jumpToLine(mentions[0]!);
+						}
+					};
+				});
+			});
 	}
 
 	private renderThreadItem(

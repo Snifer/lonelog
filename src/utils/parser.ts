@@ -92,7 +92,7 @@ export class NotationParser {
 	 * Parse NPC tags: [N:Name|tag1|tag2]
 	 */
 	private static parseNPCs(content: string): Map<string, ParsedNPC> {
-		const npcRegex = /\[N:([^\]|]+)(\|([^\]]*))?\]/g;
+		const npcRegex = /\[#?N:([^\]|]+)(\|([^\]]*))?\]/g;
 		const npcs = new Map<string, ParsedNPC>();
 
 		let match;
@@ -140,7 +140,7 @@ export class NotationParser {
 	private static parseLocations(
 		content: string
 	): Map<string, ParsedLocation> {
-		const locationRegex = /\[L:([^\]|]+)(\|([^\]]*))?\]/g;
+		const locationRegex = /\[#?L:([^\]|]+)(\|([^\]]*))?\]/g;
 		const locations = new Map<string, ParsedLocation>();
 
 		let match;
@@ -182,7 +182,7 @@ export class NotationParser {
 	 * Parse thread tags: [Thread:Name|state]
 	 */
 	private static parseThreads(content: string): Map<string, ParsedThread> {
-		const threadRegex = /\[Thread:([^\]|]+)(\|([^\]]*))?\]/g;
+		const threadRegex = /\[#?Thread:([^\]|]+)(\|([^\]]*))?\]/g;
 		const threads = new Map<string, ParsedThread>();
 
 		let match;
@@ -217,7 +217,7 @@ export class NotationParser {
 	 * Parse PC tags: [PC:Name|tag1|tag2]
 	 */
 	private static parsePCs(content: string): Map<string, ParsedPC> {
-		const pcRegex = /\[PC:([^\]|]+)(\|([^\]]*))?\]/g;
+		const pcRegex = /\[#?PC:([^\]|]+)(\|([^\]]*))?\]/g;
 		const pcs = new Map<string, ParsedPC>();
 
 		let match;
