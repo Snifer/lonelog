@@ -59,6 +59,20 @@ export interface ParsedScene {
 	line: number;
 }
 
+export interface ParsedItem {
+	name: string;
+	quantity: string;
+	properties: string[];
+	mentions: number[];
+	firstMention: number;
+	lastMention: number;
+}
+
+export interface ParsedWealth {
+	currencies: Map<string, string>; // name -> quantity (e.g., "Gold" -> "45")
+	line: number;
+}
+
 export interface ParsedSession {
 	number: number;
 	title: string;
@@ -89,6 +103,8 @@ export interface ParsedElements {
 	threads: Map<string, ParsedThread>;
 	pcs: Map<string, ParsedPC>;
 	rooms: Map<string, ParsedRoom>;
+	inventory: Map<string, ParsedItem>;
+	wealth: Map<string, string>; // Global/current wealth state
 	progress: ParsedProgress[];
 	sessions: ParsedSession[];
 	combat: ParsedCombatEncounter[];
@@ -118,8 +134,12 @@ export class NotationParser {
 		const progress = this.parseProgress(content);
 		const sessions = this.parseSessions(content);
 		const combat = this.parseCombatEncounters(content);
+		const inventory = this.parseInventory(content);
+		const wealth = this.parseWealth(content);
 
-		const result = { npcs, locations, threads, pcs, rooms, progress, sessions, combat };
+		const result: ParsedElements = { 
+			npcs, locations, threads, pcs, rooms, progress, sessions, combat, inventory, wealth 
+		};
 
 		// Update cache
 		this.cache = { content, result };
@@ -443,6 +463,112 @@ export class NotationParser {
 		}
 
 		return Array.from(seen.values());
+	}
+
+	/**
+	 * Parse Inventory tags: [Inv:Item|qty|props]
+	 * Supports deltas: [Inv:Item-1], [Inv:Item|3->2], etc.
+	 */
+	private static parseInventory(content: string): Map<string, ParsedItem> {
+		const invRegex = /\[#?Inv:([^\]|]+)(\|([^\]]*))?\]/g;
+		const inventory = new Map<string, ParsedItem>();
+
+		let match;
+		while ((match = invRegex.exec(content)) !== null) {
+			if (!match[1]) continue;
+			const namePart = match[1].trim();
+			const detailsPart = match[3] || "";
+
+			// Handle shorthand deltas like [Inv:Torch-1] in the name field
+			let name = namePart;
+			let quantity = "";
+			
+			const deltaMatch = namePart.match(/^(.+?)([+-]\d+)$/);
+			if (deltaMatch && deltaMatch[1]) {
+				name = deltaMatch[1].trim();
+				quantity = deltaMatch[2] || ""; // e.g. "-1"
+			}
+
+			const parts = detailsPart.split("|").map(p => p.trim());
+			if (parts[0] && !deltaMatch) {
+				quantity = parts[0];
+			}
+			const properties = parts.slice(1).filter(p => p);
+
+			const lineNum = this.getLineNumber(content, match.index);
+
+			if (inventory.has(name)) {
+				const existing = inventory.get(name)!;
+				existing.mentions.push(lineNum);
+				existing.lastMention = lineNum;
+
+				// Update quantity
+				if (quantity.includes("->")) {
+					existing.quantity = quantity.split("->").pop()?.trim() || existing.quantity;
+				} else if (quantity.match(/^[+-]\d+$/)) {
+					// Delta update if existing is numeric
+					const currentVal = parseInt(existing.quantity);
+					if (!isNaN(currentVal)) {
+						existing.quantity = (currentVal + parseInt(quantity)).toString();
+					} else {
+						existing.quantity = quantity;
+					}
+				} else if (quantity) {
+					existing.quantity = quantity;
+				}
+
+				// Merge properties
+				properties.forEach(p => {
+					if (!existing.properties.includes(p)) existing.properties.push(p);
+				});
+			} else {
+				inventory.set(name, {
+					name,
+					quantity: quantity.includes("->") ? quantity.split("->").pop()?.trim() || "" : quantity,
+					properties,
+					mentions: [lineNum],
+					firstMention: lineNum,
+					lastMention: lineNum
+				});
+			}
+		}
+
+		return inventory;
+	}
+
+	/**
+	 * Parse Wealth tags: [Wealth:Gold 10|Silver 5]
+	 * Returns the most recent global wealth state
+	 */
+	private static parseWealth(content: string): Map<string, string> {
+		const wealthRegex = /\[#?Wealth:([^\]]+)\]/g;
+		const currentState = new Map<string, string>();
+
+		let match;
+		while ((match = wealthRegex.exec(content)) !== null) {
+			if (!match[1]) continue;
+			const parts = match[1].split("|").map(p => p.trim());
+			
+			parts.forEach(part => {
+				// Match "Gold 10" or "Gold+5" or "Gold 10->15"
+				const m = part.match(/^([^+\-\s>]+)\s*([+\-\d>→].*)$/);
+				if (m && m[1] && m[2]) {
+					const currency = m[1].trim();
+					let value = m[2].trim().replace("→", "->");
+
+					if (value.includes("->")) {
+						currentState.set(currency, value.split("->").pop()?.trim() || "0");
+					} else if (value.match(/^[+-]\d+$/)) {
+						const currentVal = parseInt(currentState.get(currency) || "0");
+						currentState.set(currency, (currentVal + parseInt(value)).toString());
+					} else {
+						currentState.set(currency, value);
+					}
+				}
+			});
+		}
+
+		return currentState;
 	}
 
 	/**

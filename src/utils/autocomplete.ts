@@ -16,7 +16,7 @@ import { NotationParser, ParsedElements } from "./parser";
 
 interface TagSuggestion {
 	name: string;
-	type: "npc" | "location" | "thread" | "pc" | "clock" | "track" | "timer" | "room";
+	type: "npc" | "location" | "thread" | "pc" | "clock" | "track" | "timer" | "room" | "inventory" | "wealth" | "foe";
 	tags?: string[];
 	current?: number;
 	max?: number;
@@ -44,102 +44,10 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 		const line = editor.getLine(cursor.line);
 		const beforeCursor = line.substring(0, cursor.ch);
 
-		// Check for tag patterns
-		// NPC tag: [N: or [#N:
-		const npcMatch = beforeCursor.match(/\[(#)?N:([^\]|]*)$/);
-		if (npcMatch) {
-			const query = npcMatch[2] || "";
-			const start = cursor.ch - query.length;
-
-			return {
-				start: { line: cursor.line, ch: start },
-				end: cursor,
-				query,
-			};
-		}
-
-		// Location tag: [L:
-		const locationMatch = beforeCursor.match(/\[L:([^\]|]*)$/);
-		if (locationMatch) {
-			const query = locationMatch[1] || "";
-			const start = cursor.ch - query.length;
-
-			return {
-				start: { line: cursor.line, ch: start },
-				end: cursor,
-				query,
-			};
-		}
-
-		// Thread tag: [Thread:
-		const threadMatch = beforeCursor.match(/\[Thread:([^\]|]*)$/);
-		if (threadMatch) {
-			const query = threadMatch[1] || "";
-			const start = cursor.ch - query.length;
-
-			return {
-				start: { line: cursor.line, ch: start },
-				end: cursor,
-				query,
-			};
-		}
-
-		// PC tag: [PC:
-		const pcMatch = beforeCursor.match(/\[PC:([^\]|]*)$/);
-		if (pcMatch) {
-			const query = pcMatch[1] || "";
-			const start = cursor.ch - query.length;
-
-			return {
-				start: { line: cursor.line, ch: start },
-				end: cursor,
-				query,
-			};
-		}
-
-		// Clock/Event tag: [E: or [Clock:
-		const clockMatch = beforeCursor.match(/\[(E|Clock):([^\]|]*)$/);
-		if (clockMatch) {
-			const query = clockMatch[2] || "";
-			const start = cursor.ch - query.length;
-
-			return {
-				start: { line: cursor.line, ch: start },
-				end: cursor,
-				query,
-			};
-		}
-
-		// Track tag: [Track:
-		const trackMatch = beforeCursor.match(/\[Track:([^\]|]*)$/);
-		if (trackMatch) {
-			const query = trackMatch[1] || "";
-			const start = cursor.ch - query.length;
-
-			return {
-				start: { line: cursor.line, ch: start },
-				end: cursor,
-				query,
-			};
-		}
-
-		// Timer tag: [Timer:
-		const timerMatch = beforeCursor.match(/\[Timer:([^\]|]*)$/);
-		if (timerMatch) {
-			const query = timerMatch[1] || "";
-			const start = cursor.ch - query.length;
-
-			return {
-				start: { line: cursor.line, ch: start },
-				end: cursor,
-				query,
-			};
-		}
-
-		// Room tag: [R:
-		const roomMatch = beforeCursor.match(/\[(#)?R:([^\]|]*)$/);
-		if (roomMatch) {
-			const query = roomMatch[2] || "";
+		// Single regex for all tags supporting optional '#' prefix
+		const tagMatch = beforeCursor.match(/\[(#)?(N|L|Thread|PC|E|Clock|Track|Timer|R|Inv|Wealth|F):([^\]|]*)$/i);
+		if (tagMatch) {
+			const query = tagMatch[3] || "";
 			const start = cursor.ch - query.length;
 
 			return {
@@ -175,22 +83,28 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 		const query = context.query.toLowerCase();
 
 		// Determine which type of tag we're completing using regex to ensure we're at the current tag
-		if (/\[(#)?N:[^\]|]*$/.test(beforeCursor)) {
+		if (/\[(#)?N:[^\]|]*$/i.test(beforeCursor)) {
 			return this.getNPCSuggestions(query);
-		} else if (/\[L:[^\]|]*$/.test(beforeCursor)) {
+		} else if (/\[(#)?L:[^\]|]*$/i.test(beforeCursor)) {
 			return this.getLocationSuggestions(query);
-		} else if (/\[Thread:[^\]|]*$/.test(beforeCursor)) {
+		} else if (/\[(#)?Thread:[^\]|]*$/i.test(beforeCursor)) {
 			return this.getThreadSuggestions(query);
-		} else if (/\[PC:[^\]|]*$/.test(beforeCursor)) {
+		} else if (/\[(#)?PC:[^\]|]*$/i.test(beforeCursor)) {
 			return this.getPCSuggestions(query);
-		} else if (/\[(E|Clock):[^\]|]*$/.test(beforeCursor)) {
+		} else if (/\[(#)?(E|Clock):[^\]|]*$/i.test(beforeCursor)) {
 			return this.getProgressSuggestions(query, "clock");
-		} else if (/\[Track:[^\]|]*$/.test(beforeCursor)) {
+		} else if (/\[(#)?Track:[^\]|]*$/i.test(beforeCursor)) {
 			return this.getProgressSuggestions(query, "track");
-		} else if (/\[Timer:[^\]|]*$/.test(beforeCursor)) {
+		} else if (/\[(#)?Timer:[^\]|]*$/i.test(beforeCursor)) {
 			return this.getProgressSuggestions(query, "timer");
-		} else if (/\[(#)?R:[^\]|]*$/.test(beforeCursor)) {
+		} else if (/\[(#)?R:[^\]|]*$/i.test(beforeCursor)) {
 			return this.getRoomSuggestions(query);
+		} else if (/\[(#)?Inv:[^\]|]*$/i.test(beforeCursor)) {
+			return this.getInventorySuggestions(query);
+		} else if (/\[(#)?Wealth:[^\]|]*$/i.test(beforeCursor)) {
+			return this.getWealthSuggestions(query);
+		} else if (/\[(#)?F:[^\]|]*$/i.test(beforeCursor)) {
+			return this.getFoeSuggestions(query);
 		}
 
 		return [];
@@ -354,6 +268,87 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 	}
 
 	/**
+	 * Get Inventory suggestions
+	 */
+	private getInventorySuggestions(query: string): TagSuggestion[] {
+		if (!this.parsedElements) return [];
+
+		const suggestions: TagSuggestion[] = [];
+
+		for (const [name, item] of this.parsedElements.inventory.entries()) {
+			if (query === "" || name.toLowerCase().includes(query)) {
+				let displayText = name;
+				if (item.quantity && item.quantity !== "1" && item.quantity !== "") {
+					displayText += ` (x${item.quantity})`;
+				}
+				
+				if (item.properties && item.properties.length > 0) {
+					displayText += ` [${item.properties.join(", ")}]`;
+				}
+
+				suggestions.push({
+					name,
+					type: "inventory",
+					displayText,
+				});
+			}
+		}
+
+		return this.sortSuggestions(suggestions, query);
+	}
+
+	/**
+	 * Get Wealth suggestions
+	 */
+	private getWealthSuggestions(query: string): TagSuggestion[] {
+		if (!this.parsedElements) return [];
+
+		const suggestions: TagSuggestion[] = [];
+
+		for (const [name, qty] of this.parsedElements.wealth.entries()) {
+			if (query === "" || name.toLowerCase().includes(query)) {
+				let displayText = `${name} (${qty})`;
+
+				suggestions.push({
+					name,
+					type: "wealth",
+					displayText,
+				});
+			}
+		}
+
+		return this.sortSuggestions(suggestions, query);
+	}
+
+	/**
+	 * Get Foe suggestions
+	 */
+	private getFoeSuggestions(query: string): TagSuggestion[] {
+		if (!this.parsedElements) return [];
+
+		const suggestions: TagSuggestion[] = [];
+		const seenFoes = new Set<string>();
+
+		for (const encounter of this.parsedElements.combat) {
+			for (const [name, combatant] of encounter.combatants.entries()) {
+				if (combatant.type === "foe" && !seenFoes.has(name)) {
+					seenFoes.add(name);
+					if (query === "" || name.toLowerCase().includes(query)) {
+						suggestions.push({
+							name,
+							type: "foe",
+							tags: combatant.stats,
+							displayText: `${name}${combatant.stats.length > 0 ? ` (${combatant.stats.join(", ")})` : ""}`,
+						});
+					}
+				}
+			}
+		}
+
+		return this.sortSuggestions(suggestions, query);
+	}
+
+	/**
 	 * Sort suggestions by relevance
 	 */
 	private sortSuggestions(
@@ -442,6 +437,7 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 				case "npc":
 				case "location":
 				case "pc":
+				case "foe":
 					// Include existing tags if any
 					if (suggestion.tags && suggestion.tags.length > 0) {
 						insertion = `${suggestion.name}|${suggestion.tags.join("|")}]`;
@@ -465,6 +461,10 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 					break;
 				case "room":
 					insertion = `${suggestion.name}|active|]`;
+					break;
+				case "inventory":
+				case "wealth":
+					insertion = `${suggestion.name}|]`;
 					break;
 			}
 		}

@@ -26,6 +26,9 @@ export type TokenType =
 	| "dungeon-block" // [DUNGEON STATUS] at line start
 	| "foe"         // [F:...] tag
 	| "room"        // [R:...] tag
+	| "resources-block" // [RESOURCES] at line start
+	| "inventory"   // [Inv:...] tag
+	| "wealth"      // [Wealth:...] tag
 	| "text";       // plain text
 
 export interface Token {
@@ -50,6 +53,7 @@ const LINE_START_PATTERNS: Array<{ pattern: RegExp; type: Exclude<TokenType, "re
 	{ pattern: /^Rd\d+\b/i, type: "round" },
 	{ pattern: /^\[\/?COMBAT\]/i, type: "combat-block" },
 	{ pattern: /^\[\/?DUNGEON STATUS\]/i, type: "dungeon-block" },
+	{ pattern: /^\[\/?RESOURCES\]/i, type: "resources-block" },
 	{ pattern: /^(?:PC|N|[^:]+?)\s?(?:\([^)]+\))?:\s*".*?"/i, type: "dialogue" },
 ];
 
@@ -57,7 +61,7 @@ const LINE_START_PATTERNS: Array<{ pattern: RegExp; type: Exclude<TokenType, "re
 const RESULT_ARROW_RE = /->/g;
 
 /** Bracket tag pattern — supports multi-line and inline update suffix like [Clock:Name 0/6 ->2/6] */
-const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R)):[^\]]*(?:->\s*[\d/]+)?\]/g;
+const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth)):[^\]]*(?:->\s*[\d/]+)?\]/g;
 
 // ---------------------------------------------------------------------------
 // Tokenizer
@@ -114,6 +118,10 @@ export function tokenizeLine(lineText: string): Token[] {
 			type = "foe";
 		} else if (tagText.startsWith("[R:") || tagText.startsWith("[#R:")) {
 			type = "room";
+		} else if (tagText.startsWith("[Inv:") || tagText.startsWith("[#Inv:")) {
+			type = "inventory";
+		} else if (tagText.startsWith("[Wealth:") || tagText.startsWith("[#Wealth:")) {
+			type = "wealth";
 		}
 		
 		inlineTokens.push({

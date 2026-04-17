@@ -477,8 +477,8 @@ If your plugin does not need CSS, delete this file.
 	border-radius: 6px;
 	padding: 0.75em 1em;
 	margin: 0;
-	font-family: var(--font-monospace);
-	font-size: var(--font-smaller);
+	font-family: var(--ll-font-family, var(--font-monospace));
+	font-size: var(--ll-font-size, var(--font-smaller));
 	line-height: 1.7;
 	overflow-x: auto;
 }
@@ -586,6 +586,24 @@ If your plugin does not need CSS, delete this file.
 	padding-left: 4px;
 }
 
+.ll-inventory {
+	color: var(--ll-inventory-color, #0891b2);
+	font-weight: 600;
+}
+
+.ll-wealth {
+	color: var(--ll-wealth-color, #ca8a04);
+	font-weight: 600;
+	border-bottom: 1px dotted var(--ll-wealth-color, #ca8a04);
+}
+
+.ll-resources-block {
+	color: var(--ll-resources-block-color, #0891b2);
+	font-weight: 700;
+	letter-spacing: 1px;
+	border-bottom: 2px solid var(--ll-resources-block-color, #0891b2);
+}
+
 .ll-dungeon-block {
 	color: var(--ll-dungeon-block-color, #c2410c);
 	font-weight: 700;
@@ -649,6 +667,11 @@ If your plugin does not need CSS, delete this file.
 .ll-ed-line {
 	white-space: pre-wrap !important;
 	word-break: break-word;
+}
+
+.ll-ed-block-line {
+	font-family: var(--ll-font-family, var(--font-monospace)) !important;
+	font-size: var(--ll-font-size, inherit) !important;
 }
 
 /* Token symbols at line start */
@@ -742,6 +765,22 @@ If your plugin does not need CSS, delete this file.
 	font-weight: 600;
 	border-left: 2px solid var(--ll-room-color, #c2410c);
 	padding-left: 4px;
+}
+
+.ll-ed-inventory {
+	color: var(--ll-inventory-color, #0891b2);
+	font-weight: 600;
+}
+
+.ll-ed-wealth {
+	color: var(--ll-wealth-color, #ca8a04);
+	font-weight: 600;
+}
+
+.ll-ed-resources-block {
+	color: var(--ll-resources-block-color, #0891b2);
+	font-weight: 700;
+	letter-spacing: 1px;
 }
 
 .ll-ed-dungeon-block {
@@ -1332,6 +1371,104 @@ If your plugin does not need CSS, delete this file.
 	color: var(--text-muted);
 }
 
+/* Resource Dashboard Styles */
+.ll-resource-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: 12px;
+	margin-top: 12px;
+}
+
+.ll-resource-card {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--divider-color);
+	border-radius: 8px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	overflow: hidden;
+	transition: all 0.2s ease;
+	border-bottom: 3px solid var(--ll-inventory-color, #0891b2);
+}
+
+.ll-resource-card:hover {
+	border-color: var(--interactive-accent);
+	background-color: var(--background-secondary-alt);
+}
+
+.ll-resource-main {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 8px;
+}
+
+.ll-resource-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+}
+
+.ll-resource-name {
+	font-weight: 700;
+	font-size: 0.95em;
+	color: var(--text-normal);
+	line-height: 1.2;
+}
+
+.ll-resource-qty {
+	font-size: 1.8em;
+	font-weight: 800;
+	color: var(--ll-inventory-color, #0891b2);
+	line-height: 1;
+	font-family: var(--font-monospace);
+}
+
+.ll-resource-props {
+	font-size: 0.75em;
+	color: var(--text-muted);
+	font-style: italic;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.ll-wealth-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	background-color: var(--background-primary);
+	border-radius: 10px;
+	border: 1px solid var(--divider-color);
+	border-left: 5px solid var(--ll-wealth-color, #ca8a04);
+	box-shadow: var(--shadow-s);
+}
+
+.ll-wealth-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.ll-wealth-label {
+	font-weight: 600;
+	font-size: 0.7em;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--text-muted);
+}
+
+.ll-wealth-value {
+	font-weight: 800;
+	font-size: 1.3em;
+	color: var(--ll-wealth-color, #ca8a04);
+	font-family: var(--font-monospace);
+}
+
 .ll-status-cleared {
 	background-color: rgba(34, 197, 94, 0.15) !important;
 	color: #22c55e !important;
@@ -1530,4 +1667,38 @@ If your plugin does not need CSS, delete this file.
 
 .lonelog-link-separator {
 	color: var(--text-muted);
+}
+
+/* Reduced boldness overrides */
+.ll-reduced-boldness .ll-action, .ll-reduced-boldness .ll-ed-action,
+.ll-reduced-boldness .ll-question, .ll-reduced-boldness .ll-ed-question,
+.ll-reduced-boldness .ll-dice, .ll-reduced-boldness .ll-ed-dice,
+.ll-reduced-boldness .ll-consequence, .ll-reduced-boldness .ll-ed-consequence,
+.ll-reduced-boldness .ll-result, .ll-reduced-boldness .ll-ed-result,
+.ll-reduced-boldness .ll-narrative, .ll-reduced-boldness .ll-ed-narrative,
+.ll-reduced-boldness .ll-table, .ll-reduced-boldness .ll-ed-table,
+.ll-reduced-boldness .ll-generator, .ll-reduced-boldness .ll-ed-generator,
+.ll-reduced-boldness .ll-foe, .ll-reduced-boldness .ll-ed-foe,
+.ll-reduced-boldness .ll-room, .ll-reduced-boldness .ll-ed-room,
+.ll-reduced-boldness .ll-inventory, .ll-reduced-boldness .ll-ed-inventory,
+.ll-reduced-boldness .ll-wealth, .ll-reduced-boldness .ll-ed-wealth {
+	font-weight: normal;
+}
+
+.ll-reduced-boldness .ll-tag, .ll-reduced-boldness .ll-ed-tag,
+.ll-reduced-boldness .ll-dialogue, .ll-reduced-boldness .ll-ed-dialogue {
+	font-weight: normal;
+}
+
+.ll-reduced-boldness .ll-scene, .ll-reduced-boldness .ll-ed-scene,
+.ll-reduced-boldness .ll-combat-block, .ll-reduced-boldness .ll-ed-combat-block,
+.ll-reduced-boldness .ll-resources-block, .ll-reduced-boldness .ll-ed-resources-block,
+.ll-reduced-boldness .ll-dungeon-block, .ll-reduced-boldness .ll-ed-dungeon-block,
+.ll-reduced-boldness .ll-ed-dungeon, .ll-reduced-boldness .ll-ed-resource {
+	font-weight: 500;
+}
+
+.ll-reduced-boldness .ll-header, .ll-reduced-boldness .ll-ed-header,
+.ll-reduced-boldness .ll-round, .ll-reduced-boldness .ll-ed-round {
+	font-weight: 600;
 }

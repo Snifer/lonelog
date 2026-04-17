@@ -335,6 +335,33 @@ export class NotationCommands {
 		}
 	}
 
+	static insertInventoryTag(editor: Editor, settings: LonelogSettings): void {
+		const text = "[Inv:Name|1|]";
+		const cursor = editor.getCursor();
+		editor.replaceSelection(text);
+
+		if (settings.smartCursorPositioning) {
+			editor.setCursor({ line: cursor.line, ch: cursor.ch + 5 });
+		}
+	}
+
+	static insertWealthTag(editor: Editor, settings: LonelogSettings): void {
+		const text = "[Wealth:Gold 0]";
+		const cursor = editor.getCursor();
+		editor.replaceSelection(text);
+
+		if (settings.smartCursorPositioning) {
+			editor.setCursor({ line: cursor.line, ch: cursor.ch + 8 });
+		}
+	}
+
+	static insertResourcesBlock(editor: Editor, settings: LonelogSettings): void {
+		const text = "[RESOURCES]\n\n[/RESOURCES]";
+		const cursor = editor.getCursor();
+		editor.replaceSelection(text);
+		editor.setCursor({ line: cursor.line + 1, ch: 0 });
+	}
+
 	/**
 	 * @deprecated Use RollManager.processLine instead. Only kept for backward compatibility if needed within this class.
 	 */

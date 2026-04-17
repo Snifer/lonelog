@@ -13,6 +13,7 @@ import { SceneNavigatorView, SCENE_NAV_TYPE } from "./ui/scene-nav";
 import { DASHBOARD_VIEW_TYPE, DashboardView } from "ui/dashboard-view";
 import { CombatTrackerView, COMBAT_VIEW_TYPE } from "./ui/combat-view";
 import { DungeonStatusView, DUNGEON_VIEW_TYPE } from "./ui/dungeon-view";
+import { ResourceStatusView, RESOURCE_VIEW_TYPE } from "./ui/resource-view";
 import { lonelogBlockProcessor, lonelogGlobalProcessor } from "./utils/reading-highlighter";
 import { lonelogEditorPlugin } from "./utils/editor-highlighter";
 
@@ -27,6 +28,9 @@ export default class LonelogPlugin extends Plugin {
 
 		// Set locale from settings
 		setLocale(this.settings.locale || "en");
+
+		// Apply the token font weight from settings
+		this.applyFontWeightSetting();
 
 		// Register reading mode highlighting (if enabled)
 		if (this.settings.enableReadingHighlighting) {
@@ -65,7 +69,7 @@ export default class LonelogPlugin extends Plugin {
 		);
 		this.registerView(
 			DASHBOARD_VIEW_TYPE,
-			(leaf) => new DashboardView(leaf)
+			(leaf) => new DashboardView(leaf, this)
 		);
 		this.registerView(
 			COMBAT_VIEW_TYPE,
@@ -75,6 +79,10 @@ export default class LonelogPlugin extends Plugin {
 			DUNGEON_VIEW_TYPE,
 			(leaf) => new DungeonStatusView(leaf)
 		);
+		this.registerView(
+			RESOURCE_VIEW_TYPE,
+			(leaf) => new ResourceStatusView(leaf)
+		);
 
 		// Detach all views
 		this.app.workspace.detachLeavesOfType(PROGRESS_VIEW_TYPE);
@@ -83,6 +91,7 @@ export default class LonelogPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(DASHBOARD_VIEW_TYPE);
 		this.app.workspace.detachLeavesOfType(COMBAT_VIEW_TYPE);
 		this.app.workspace.detachLeavesOfType(DUNGEON_VIEW_TYPE);
+		this.app.workspace.detachLeavesOfType(RESOURCE_VIEW_TYPE);
 
 		// Register auto-completion
 		this.autoComplete = new LonelogAutoComplete(this.app);
@@ -140,7 +149,16 @@ export default class LonelogPlugin extends Plugin {
 
 	onunload() {
 		removeHighlightColors();
+		document.body.classList.remove("ll-reduced-boldness");
 		console.debug("Unloading Lonelog plugin");
+	}
+
+	applyFontWeightSetting() {
+		if (this.settings.tokenFontWeight === "normal") {
+			document.body.classList.add("ll-reduced-boldness");
+		} else {
+			document.body.classList.remove("ll-reduced-boldness");
+		}
 	}
 
 	async loadSettings() {
@@ -332,6 +350,36 @@ export default class LonelogPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: "insert-inventory-tag",
+			name: t("commands.insert-inventory-tag"),
+			editorCheckCallback: (checking: boolean, editor) => {
+				if (checking) return this.settings.enableResourceAddon;
+				if (editor) NotationCommands.insertInventoryTag(editor, this.settings);
+				return true;
+			},
+		});
+
+		this.addCommand({
+			id: "insert-wealth-tag",
+			name: t("commands.insert-wealth-tag"),
+			editorCheckCallback: (checking: boolean, editor) => {
+				if (checking) return this.settings.enableResourceAddon;
+				if (editor) NotationCommands.insertWealthTag(editor, this.settings);
+				return true;
+			},
+		});
+
+		this.addCommand({
+			id: "insert-resources-block",
+			name: t("commands.insert-resources-block"),
+			editorCheckCallback: (checking: boolean, editor) => {
+				if (checking) return this.settings.enableResourceAddon;
+				if (editor) NotationCommands.insertResourcesBlock(editor, this.settings);
+				return true;
+			},
+		});
+
 		// Phase 2: Template commands
 		this.addCommand({
 			id: "insert-campaign-header",
@@ -444,6 +492,14 @@ export default class LonelogPlugin extends Plugin {
 		});
 
 		this.addCommand({
+			id: "open-resources",
+			name: t("commands.open-resources"), // I need to add this
+			callback: () => {
+				void this.activateView(RESOURCE_VIEW_TYPE);
+			},
+		});
+
+		this.addCommand({
 			id: "open-view-selector",
 			name: t("commands.open-view-selector"),
 			callback: () => {
@@ -492,6 +548,7 @@ export default class LonelogPlugin extends Plugin {
 			{ id: SCENE_NAV_TYPE, name: t("views.scene-title"), icon: "map" },
 			{ id: COMBAT_VIEW_TYPE, name: t("views.combat-tracker-title"), icon: "swords" },
 			{ id: DUNGEON_VIEW_TYPE, name: t("views.dungeon-title"), icon: "map" },
+			{ id: RESOURCE_VIEW_TYPE, name: t("views.resources-header"), icon: "coins" },
 		];
 
 		views.forEach((view) => {

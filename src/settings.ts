@@ -31,6 +31,7 @@ export interface LonelogSettings {
 	enableDiceRoller: boolean;
 	enableCombatAddon: boolean;
 	enableDungeonAddon: boolean;
+	enableResourceAddon: boolean;
 
 	// Dice roller output settings
 	diceDetailMode: boolean;   // Show individual dice values instead of sum
@@ -58,8 +59,14 @@ export interface LonelogSettings {
 	colorFoe: string;         // [F:...] — user-defined
 	colorRoom: string;        // [R:...] — user-defined
 	colorDungeonBlock: string; // [DUNGEON STATUS] — user-defined
+	colorInventory: string;   // [INV:...] — user-defined
+	colorWealth: string;      // [WEALTH:...] — user-defined
+	colorResourcesBlock: string; // [RESOURCES] — user-defined
 	locale: string;           // Interface language
 	defaultRibbonView: string; // View to open when ribbon is clicked
+	tokenFontWeight: string;  // Boldness for tokens
+	blockFontFamily: string; // Font family for the codeblocks
+	blockFontSize: string; // Font size for the codeblocks
 }
 
 export const DEFAULT_SETTINGS: LonelogSettings = {
@@ -87,6 +94,7 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	enableDiceRoller: true,
 	enableCombatAddon: false,
 	enableDungeonAddon: false,
+	enableResourceAddon: false,
 
 	// Dice output defaults
 	diceDetailMode: false,
@@ -114,8 +122,14 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	colorFoe: "#c2410c",    // default orange
 	colorRoom: "#c2410c",    // default orange
 	colorDungeonBlock: "#c2410c", // default orange
+	colorInventory: "#0891b2", // default cyan (matches items)
+	colorWealth: "#ca8a04",    // default yellow (matches gold)
+	colorResourcesBlock: "#0891b2", // default cyan
 	locale: "en",
 	defaultRibbonView: "",
+	tokenFontWeight: "normal",
+	blockFontFamily: "",
+	blockFontSize: "",
 };
 
 /** Sets Lonelog CSS custom properties on document.body */
@@ -138,6 +152,21 @@ export function applyHighlightColors(settings: LonelogSettings): void {
 	document.body.style.setProperty("--ll-foe-color", settings.colorFoe);
 	document.body.style.setProperty("--ll-room-color", settings.colorRoom);
 	document.body.style.setProperty("--ll-dungeon-block-color", settings.colorDungeonBlock);
+	document.body.style.setProperty("--ll-inventory-color", settings.colorInventory);
+	document.body.style.setProperty("--ll-wealth-color", settings.colorWealth);
+	document.body.style.setProperty("--ll-resources-block-color", settings.colorResourcesBlock);
+
+	if (settings.blockFontFamily) {
+		document.body.style.setProperty("--ll-font-family", settings.blockFontFamily);
+	} else {
+		document.body.style.removeProperty("--ll-font-family");
+	}
+
+	if (settings.blockFontSize) {
+		document.body.style.setProperty("--ll-font-size", settings.blockFontSize);
+	} else {
+		document.body.style.removeProperty("--ll-font-size");
+	}
 }
 
 /** Removes the injected CSS custom properties (call from onunload). */
@@ -160,6 +189,11 @@ export function removeHighlightColors(): void {
 	document.body.style.removeProperty("--ll-foe-color");
 	document.body.style.removeProperty("--ll-room-color");
 	document.body.style.removeProperty("--ll-dungeon-block-color");
+	document.body.style.removeProperty("--ll-inventory-color");
+	document.body.style.removeProperty("--ll-wealth-color");
+	document.body.style.removeProperty("--ll-resources-block-color");
+	document.body.style.removeProperty("--ll-font-family");
+	document.body.style.removeProperty("--ll-font-size");
 }
 
 // ---------------------------------------------------------------------------
@@ -187,6 +221,9 @@ interface ColorDef {
 		| "colorFoe"
 		| "colorRoom"
 		| "colorDungeonBlock"
+		| "colorInventory"
+		| "colorWealth"
+		| "colorResourcesBlock"
 	>;
 	label: string;
 	desc: string;
@@ -211,6 +248,9 @@ const COLOR_DEFS: ColorDef[] = [
 	{ key: "colorFoe", label: t("settings.color-foe"), desc: t("settings.color-foe-desc") },
 	{ key: "colorRoom", label: t("settings.color-room"), desc: t("settings.color-room-desc") },
 	{ key: "colorDungeonBlock", label: t("settings.color-dungeon-block"), desc: t("settings.color-dungeon-block-desc") },
+	{ key: "colorInventory", label: t("settings.color-inventory"), desc: t("settings.color-inventory-desc") },
+	{ key: "colorWealth", label: t("settings.color-wealth"), desc: t("settings.color-wealth-desc") },
+	{ key: "colorResourcesBlock", label: t("settings.color-resources-block"), desc: t("settings.color-resources-block-desc") },
 ];
 
 export class LonelogSettingTab extends PluginSettingTab {
@@ -442,6 +482,51 @@ export class LonelogSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName(t("settings.highlight-section")).setHeading();
 
 		new Setting(containerEl)
+			.setName(t("settings.token-font-weight"))
+			.setDesc(t("settings.token-font-weight-desc"))
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("bold", t("settings.weight-bold"))
+					.addOption("normal", t("settings.weight-normal"))
+					.setValue(this.plugin.settings.tokenFontWeight)
+					.onChange(async (value) => {
+						this.plugin.settings.tokenFontWeight = value;
+						await this.plugin.saveSettings();
+						if (typeof this.plugin.applyFontWeightSetting === "function") {
+							this.plugin.applyFontWeightSetting();
+						}
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.block-font-family"))
+			.setDesc(t("settings.block-font-family-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Consolas, 'Courier New'")
+					.setValue(this.plugin.settings.blockFontFamily)
+					.onChange(async (value) => {
+						this.plugin.settings.blockFontFamily = value;
+						await this.plugin.saveSettings();
+						applyHighlightColors(this.plugin.settings);
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.block-font-size"))
+			.setDesc(t("settings.block-font-size-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("14px, 1.2em")
+					.setValue(this.plugin.settings.blockFontSize)
+					.onChange(async (value) => {
+						this.plugin.settings.blockFontSize = value;
+						await this.plugin.saveSettings();
+						applyHighlightColors(this.plugin.settings);
+					})
+			);
+
+		new Setting(containerEl)
 			.setName(t("settings.enable-editor"))
 			.setDesc(t("settings.enable-editor-desc"))
 			.addToggle((toggle) =>
@@ -507,6 +592,18 @@ export class LonelogSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.enableDungeonAddon)
 					.onChange(async (value) => {
 						this.plugin.settings.enableDungeonAddon = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.enable-resources"))
+			.setDesc(t("settings.enable-resources-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableResourceAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enableResourceAddon = value;
 						await this.plugin.saveSettings();
 					})
 			);

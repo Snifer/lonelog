@@ -138,7 +138,7 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
 	const builder = new RangeSetBuilder<Decoration>();
 	const decorations: Array<Range<Decoration>> = [];
 
-	const allBlocks = settings.enableGlobalNotation ? [] : findLonelogBlocks(view.state);
+	const allBlocks = findLonelogBlocks(view.state);
 
 	for (const { from, to } of view.visibleRanges) {
 		const doc = view.state.doc;
@@ -150,7 +150,8 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
 			
 			for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
 				const line = doc.line(lineNum);
-				processLineDecorations(line, decorations, settings);
+				const isBlock = allBlocks.some(b => line.from >= b.from && line.to <= b.to);
+				processLineDecorations(line, decorations, settings, isBlock);
 			}
 		} else {
 			// Filter blocks that overlap with the visible range
@@ -163,7 +164,7 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
 				for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
 					const line = doc.line(lineNum);
 					if (line.from < block.from || line.to > block.to) continue;
-					processLineDecorations(line, decorations, settings);
+					processLineDecorations(line, decorations, settings, true);
 				}
 			}
 		}
@@ -183,7 +184,8 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
 function processLineDecorations(
 	line: { from: number; to: number; text: string },
 	decorations: Array<Range<Decoration>>,
-	settings: LonelogSettings
+	settings: LonelogSettings,
+	isBlock: boolean
 ): void {
 	const lineText = line.text;
 
@@ -191,7 +193,7 @@ function processLineDecorations(
 	decorations.push({
 		from: line.from,
 		to: line.from,
-		value: Decoration.line({ class: "ll-ed-line" }),
+		value: Decoration.line({ class: isBlock ? "ll-ed-line ll-ed-block-line" : "ll-ed-line" }),
 	});
 
 	// Tokenize using shared logic
