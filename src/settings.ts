@@ -32,6 +32,7 @@ export interface LonelogSettings {
 	enableCombatAddon: boolean;
 	enableDungeonAddon: boolean;
 	enableResourceAddon: boolean;
+	enableCardAddon: boolean;
 
 	// Dice roller output settings
 	diceDetailMode: boolean;   // Show individual dice values instead of sum
@@ -39,6 +40,7 @@ export interface LonelogSettings {
 	showDiceHigh: boolean;     // Whether to show the high die annotation
 	diceLowLabel: string;      // Label for the lowest die
 	showDiceLow: boolean;      // Whether to show the low die annotation
+	inlineCardDescriptions: boolean; // Automagically add the explicit // card name on draws
 
 	// Highlighting colors
 	colorAction: string;      // @ lines — blue
@@ -95,6 +97,7 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	enableCombatAddon: false,
 	enableDungeonAddon: false,
 	enableResourceAddon: false,
+	enableCardAddon: false,
 
 	// Dice output defaults
 	diceDetailMode: false,
@@ -102,6 +105,7 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	showDiceHigh: true,
 	diceLowLabel: "Low",
 	showDiceLow: true,
+	inlineCardDescriptions: true,
 
 	// Match the values currently used in highlighter.css
 	colorAction: "#3b82f6",  // blue
@@ -608,6 +612,18 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl)
+			.setName(t("settings.enable-card"))
+			.setDesc(t("settings.enable-card-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableCardAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enableCardAddon = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
 		// ── Extras & Interactive Tools ─────────────────────────────────────
 		new Setting(containerEl).setName(t("settings.extras-section")).setHeading();
 
@@ -681,6 +697,18 @@ export class LonelogSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.diceLowLabel)
 					.onChange(async (value) => {
 						this.plugin.settings.diceLowLabel = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName(t("settings.card-inline-descriptions"))
+			.setDesc(t("settings.card-inline-descriptions-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.inlineCardDescriptions)
+					.onChange(async (value) => {
+						this.plugin.settings.inlineCardDescriptions = value;
 						await this.plugin.saveSettings();
 					})
 			);

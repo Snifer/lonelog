@@ -215,6 +215,14 @@ export default class LonelogPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: "draw-card-on-line",
+			name: t("commands.draw-card-on-line"),
+			editorCallback: (editor) => {
+				NotationCommands.drawCardOnLine(editor, this.settings);
+			},
+		});
+
 
 		this.addCommand({
 			id: "insert-consequence",

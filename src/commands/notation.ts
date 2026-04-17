@@ -3,6 +3,7 @@ import { LonelogSettings } from "../settings";
 import { TrackModal } from "./templates";
 import { TableResolver, TableDefinition } from "../utils/table-resolver";
 import { RollManager } from "../utils/roll-manager";
+import { CardRoller } from "../utils/card-roller";
 
 export class NotationCommands {
 	// Single symbol insertions
@@ -280,6 +281,19 @@ export class NotationCommands {
 		// 2. Otherwise process just the current line
 		const newLineText = RollManager.processLine(lineText, settings, tables);
 		if (newLineText !== lineText) {
+			editor.setLine(lineNum, newLineText);
+		}
+	}
+
+	static drawCardOnLine(editor: Editor, settings: LonelogSettings): void {
+		if (!settings.enableCardAddon) return;
+		
+		const cursor = editor.getCursor();
+		const lineNum = cursor.line;
+		const lineText = editor.getLine(lineNum);
+
+		const newLineText = CardRoller.processLine(lineText, settings.inlineCardDescriptions);
+		if (newLineText && newLineText !== lineText) {
 			editor.setLine(lineNum, newLineText);
 		}
 	}
