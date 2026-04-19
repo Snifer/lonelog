@@ -3,8 +3,7 @@
 [![version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/snifer/lonelog/releases)
 [![license](https://img.shields.io/badge/license-0--BSD-green.svg)](LICENSE)
 ![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/lonelog/total?logo)
-
-
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-ff5f5f?logo=ko-fi&logoColor=white)]([https://ko-fi.com/TU_USUARIO](https://ko-fi.com/bastiondeldino))
 ![Lonelog Obsidian Plug-in Logo](./assets/lonelog-obsidian-logo.png)
 
 **Lonelog for Obsidian** streamlines your solo TTRPG journaling by bringing the [Lonelog notation](https://zeruhur.itch.io/lonelog) standard directly into your vault. Focus on the story while keeping mechanics organized, visual, and fast. **Fully compatible with Lonelog 1.4.0 system.**
