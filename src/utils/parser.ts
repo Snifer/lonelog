@@ -180,6 +180,7 @@ export class NotationParser {
 				existing.mentions.push(lineNum);
 				existing.lastMention = lineNum;
 				// When an NPC is updated, overwrite all existing tags
+				if(match.toString()[1].contains('#')) continue;
 				const newTags = [];
 				tags.forEach((tag) => {
 					newTags.push(tag)
