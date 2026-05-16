@@ -440,9 +440,9 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 				case "foe":
 					// Include existing tags if any
 					if (suggestion.tags && suggestion.tags.length > 0) {
-						insertion = `${suggestion.name}|${suggestion.tags.join("|")}]`;
+						insertion = `${suggestion.name}|${suggestion.tags.join("|")}`;
 					} else {
-						insertion = `${suggestion.name}]`;
+						insertion = `${suggestion.name}`;
 					}
 					break;
 				case "thread":
@@ -450,21 +450,21 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 					break;
 				case "clock": {
 					// Detect prefix (E: or Clock:)
-					insertion = `${suggestion.name} ${suggestion.current}/${suggestion.max}]`;
+					insertion = `${suggestion.name} ${suggestion.current}/${suggestion.max}`;
 					break;
 				}
 				case "track":
-					insertion = `${suggestion.name} ${suggestion.current}/${suggestion.max}]`;
+					insertion = `${suggestion.name} ${suggestion.current}/${suggestion.max}`;
 					break;
 				case "timer":
-					insertion = `${suggestion.name} ${suggestion.current}]`;
+					insertion = `${suggestion.name} ${suggestion.current}`;
 					break;
 				case "room":
-					insertion = `${suggestion.name}|active]`;
+					insertion = `${suggestion.name}|active`;
 					break;
 				case "inventory":
 				case "wealth":
-					insertion = `${suggestion.name}]`;
+					insertion = `${suggestion.name}`;
 					break;
 			}
 		}
