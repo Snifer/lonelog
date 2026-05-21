@@ -666,8 +666,12 @@ export class NotationParser {
 			tags.forEach((tag: string) => {
 				if(tag.contains('->')){
 					const tagText: string[] = tag.split('->');
-					const changedIndex: number = existing.tags.indexOf(tagText[0].trim());
-					existing.tags[changedIndex] = tagText[1]
+					if (tagText[0] !== undefined && tagText[1] !== undefined) {
+						const changedIndex: number = existing.tags.indexOf(tagText[0].trim());
+						if (changedIndex !== -1) {
+							existing.tags[changedIndex] = tagText[1].trim();
+						}
+					}
 				} else if (tag[0]?.contains('+')) {
 					existing.tags.push(tag.slice(1, tag.length));
 				} else if (tag[0]?.contains('-')) {
