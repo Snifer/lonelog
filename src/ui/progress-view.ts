@@ -172,7 +172,9 @@ export class ProgressTrackerView extends ItemView {
 
 		if (item.max !== undefined) {
 			// Clock or Track (with max)
-			progressText.setText(`${item.current}/${item.max}`);
+			const currentDisplay = Number.isInteger(item.current) ? item.current.toString() : item.current.toString();
+			const maxDisplay = Number.isInteger(item.max) ? item.max.toString() : item.max.toString();
+			progressText.setText(`${currentDisplay}/${maxDisplay}`);
 
 			// Progress bar
 			const progressBar = controlsRow.createEl("div", {
@@ -214,6 +216,14 @@ export class ProgressTrackerView extends ItemView {
 		});
 	}
 
+	/**
+	 * Format a number for display: drops unnecessary trailing zeros
+	 * but preserves fractional precision (e.g. 1.5 stays "1.5", 2 stays "2").
+	 */
+	private formatNumber(value: number): string {
+		return Number.isInteger(value) ? value.toString() : parseFloat(value.toFixed(4)).toString();
+	}
+
 	private async updateProgress(
 		item: ParsedProgress,
 		delta: number
@@ -227,7 +237,7 @@ export class ProgressTrackerView extends ItemView {
 		if (item.line < lines.length) {
 			const line = lines[item.line];
 			if (!line) return;
-			const newCurrent = Math.max(0, item.current + delta);
+			const newCurrent = Math.max(0, parseFloat((item.current + delta).toFixed(4)));
 
 			let newLine: string;
 			if (item.type === "clock") {
@@ -237,10 +247,10 @@ export class ProgressTrackerView extends ItemView {
 					`[E:$1 ${newCurrent}/$3]`
 				);
 			} else if (item.type === "track") {
-				// [Track:Name X/Y]
+				// [Track:Name X/Y] — supports fractional values
 				newLine = line.replace(
-					/\[Track:([^\]]+)\s+(\d+)\/(\d+)\]/,
-					`[Track:$1 ${newCurrent}/$3]`
+					/\[Track:([^\]]+)\s+([\d.]+)\/([\d.]+)\]/,
+					`[Track:$1 ${this.formatNumber(newCurrent)}/$3]`
 				);
 			} else {
 				// [Timer:Name X]

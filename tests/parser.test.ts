@@ -102,4 +102,61 @@ describe('NotationParser', () => {
 		expect(clock?.current).toBe(3);
 		expect(clock?.max).toBe(6);
 	});
+
+	test('parses fractional track progress values', () => {
+		const content = `
+			[Track:Find Uncle 1.5/10]
+			[Track:Bonds 0.25/4]
+			[Track:Vow 0.5/10]
+		`;
+		const result = NotationParser.parse(content);
+
+		const uncle = result.progress.find(p => p.name === 'Find Uncle');
+		expect(uncle?.current).toBe(1.5);
+		expect(uncle?.max).toBe(10);
+
+		const bonds = result.progress.find(p => p.name === 'Bonds');
+		expect(bonds?.current).toBe(0.25);
+		expect(bonds?.max).toBe(4);
+
+		const vow = result.progress.find(p => p.name === 'Vow');
+		expect(vow?.current).toBe(0.5);
+		expect(vow?.max).toBe(10);
+	});
+
+	test('fractional track with inline update syntax', () => {
+		const content = `
+			[Track:Find Uncle 0.5/10 ->1.5/10]
+			[Track:Bonds 0/4 ->0.25/4]
+		`;
+		const result = NotationParser.parse(content);
+
+		const uncle = result.progress.find(p => p.name === 'Find Uncle');
+		expect(uncle?.current).toBe(1.5);
+		expect(uncle?.max).toBe(10);
+
+		const bonds = result.progress.find(p => p.name === 'Bonds');
+		expect(bonds?.current).toBe(0.25);
+		expect(bonds?.max).toBe(4);
+	});
+
+	test('mixed integer and fractional tracks', () => {
+		const content = `
+			[Track:Investigation 4/10]
+			[Track:Find Uncle 1.5/10]
+			[Timer:Dawn 3]
+		`;
+		const result = NotationParser.parse(content);
+
+		const investigation = result.progress.find(p => p.name === 'Investigation');
+		expect(investigation?.current).toBe(4);
+		expect(investigation?.max).toBe(10);
+
+		const uncle = result.progress.find(p => p.name === 'Find Uncle');
+		expect(uncle?.current).toBe(1.5);
+		expect(uncle?.max).toBe(10);
+
+		const dawn = result.progress.find(p => p.name === 'Dawn');
+		expect(dawn?.current).toBe(3);
+	});
 });

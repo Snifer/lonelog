@@ -1,7 +1,7 @@
 {
 	"id": "lonelog",
 	"name": "Lonelog",
-	"version": "1.4.7",
+	"version": "1.4.8",
 	"minAppVersion": "0.15.0",
 	"description": "Streamline solo TTRPG journaling with Lonelog notation shortcuts and templates.",
 	"author": "Snifer (Bastion del Dinosaurio)",

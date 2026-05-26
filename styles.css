@@ -1671,35 +1671,56 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Reduced boldness overrides */
-.ll-reduced-boldness .ll-action, .ll-reduced-boldness .ll-ed-action,
-.ll-reduced-boldness .ll-question, .ll-reduced-boldness .ll-ed-question,
-.ll-reduced-boldness .ll-dice, .ll-reduced-boldness .ll-ed-dice,
-.ll-reduced-boldness .ll-consequence, .ll-reduced-boldness .ll-ed-consequence,
-.ll-reduced-boldness .ll-result, .ll-reduced-boldness .ll-ed-result,
-.ll-reduced-boldness .ll-narrative, .ll-reduced-boldness .ll-ed-narrative,
-.ll-reduced-boldness .ll-table, .ll-reduced-boldness .ll-ed-table,
-.ll-reduced-boldness .ll-generator, .ll-reduced-boldness .ll-ed-generator,
-.ll-reduced-boldness .ll-foe, .ll-reduced-boldness .ll-ed-foe,
-.ll-reduced-boldness .ll-room, .ll-reduced-boldness .ll-ed-room,
-.ll-reduced-boldness .ll-inventory, .ll-reduced-boldness .ll-ed-inventory,
-.ll-reduced-boldness .ll-wealth, .ll-reduced-boldness .ll-ed-wealth {
+.ll-reduced-boldness .ll-action,
+.ll-reduced-boldness .ll-ed-action,
+.ll-reduced-boldness .ll-question,
+.ll-reduced-boldness .ll-ed-question,
+.ll-reduced-boldness .ll-dice,
+.ll-reduced-boldness .ll-ed-dice,
+.ll-reduced-boldness .ll-consequence,
+.ll-reduced-boldness .ll-ed-consequence,
+.ll-reduced-boldness .ll-result,
+.ll-reduced-boldness .ll-ed-result,
+.ll-reduced-boldness .ll-narrative,
+.ll-reduced-boldness .ll-ed-narrative,
+.ll-reduced-boldness .ll-table,
+.ll-reduced-boldness .ll-ed-table,
+.ll-reduced-boldness .ll-generator,
+.ll-reduced-boldness .ll-ed-generator,
+.ll-reduced-boldness .ll-foe,
+.ll-reduced-boldness .ll-ed-foe,
+.ll-reduced-boldness .ll-room,
+.ll-reduced-boldness .ll-ed-room,
+.ll-reduced-boldness .ll-inventory,
+.ll-reduced-boldness .ll-ed-inventory,
+.ll-reduced-boldness .ll-wealth,
+.ll-reduced-boldness .ll-ed-wealth {
 	font-weight: normal;
 }
 
-.ll-reduced-boldness .ll-tag, .ll-reduced-boldness .ll-ed-tag,
-.ll-reduced-boldness .ll-dialogue, .ll-reduced-boldness .ll-ed-dialogue {
+.ll-reduced-boldness .ll-tag,
+.ll-reduced-boldness .ll-ed-tag,
+.ll-reduced-boldness .ll-dialogue,
+.ll-reduced-boldness .ll-ed-dialogue {
 	font-weight: normal;
 }
 
-.ll-reduced-boldness .ll-scene, .ll-reduced-boldness .ll-ed-scene,
-.ll-reduced-boldness .ll-combat-block, .ll-reduced-boldness .ll-ed-combat-block,
-.ll-reduced-boldness .ll-resources-block, .ll-reduced-boldness .ll-ed-resources-block,
-.ll-reduced-boldness .ll-dungeon-block, .ll-reduced-boldness .ll-ed-dungeon-block,
-.ll-reduced-boldness .ll-ed-dungeon, .ll-reduced-boldness .ll-ed-resource {
+.ll-reduced-boldness .ll-scene,
+.ll-reduced-boldness .ll-ed-scene,
+.ll-reduced-boldness .ll-combat-block,
+.ll-reduced-boldness .ll-ed-combat-block,
+.ll-reduced-boldness .ll-resources-block,
+.ll-reduced-boldness .ll-ed-resources-block,
+.ll-reduced-boldness .ll-dungeon-block,
+.ll-reduced-boldness .ll-ed-dungeon-block,
+.ll-reduced-boldness .ll-ed-dungeon,
+.ll-reduced-boldness .ll-ed-resource {
 	font-weight: 500;
 }
 
-.ll-reduced-boldness .ll-header, .ll-reduced-boldness .ll-ed-header,
-.ll-reduced-boldness .ll-round, .ll-reduced-boldness .ll-ed-round {
+.ll-reduced-boldness .ll-header,
+.ll-reduced-boldness .ll-ed-header,
+.ll-reduced-boldness .ll-round,
+.ll-reduced-boldness .ll-ed-round {
 	font-weight: 600;
 }

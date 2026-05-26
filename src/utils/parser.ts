@@ -326,12 +326,13 @@ export class NotationParser {
 
 		// Tracks: [Track:Name X/Y]
 		// Supports inline update: [Track:Name X/Y ->newX/newY]
-		const trackRegex = /\[Track:([^\]]+?)\s+(\d+)\/(\d+)(?:\s*->\s*(\d+)\/(\d+))?\]/g;
+		// Supports fractional values: [Track:Name 1.5/10] or [Track:Name 0.25/10 ->0.5/10]
+		const trackRegex = /\[Track:([^\]]+?)\s+(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)(?:\s*->\s*(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?))?\]/g;
 		while ((match = trackRegex.exec(content)) !== null) {
 			if (!match[1] || !match[2] || !match[3]) continue;
 			const name = match[1].trim();
-			const current = match[4] !== undefined ? parseInt(match[4]) : parseInt(match[2]);
-			const max = match[5] !== undefined ? parseInt(match[5]) : parseInt(match[3]);
+			const current = match[4] !== undefined ? parseFloat(match[4]) : parseFloat(match[2]);
+			const max = match[5] !== undefined ? parseFloat(match[5]) : parseFloat(match[3]);
 			const line = this.getLineNumber(content, match.index);
 
 			progress.push({

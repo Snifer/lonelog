@@ -60,8 +60,8 @@ const LINE_START_PATTERNS: Array<{ pattern: RegExp; type: Exclude<TokenType, "re
 /** Result arrow pattern */
 const RESULT_ARROW_RE = /->/g;
 
-/** Bracket tag pattern — supports multi-line and inline update suffix like [Clock:Name 0/6 ->2/6] */
-const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth)):[^\]]*(?:->\s*[\d/]+)?\]/g;
+/** Bracket tag pattern — supports multi-line and inline update suffix like [Clock:Name 0/6 ->2/6] or [Track:Name 1.5/10] */
+const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth)):[^\]]*(?:->\s*[\d./]+)?\]/g;
 
 // ---------------------------------------------------------------------------
 // Tokenizer

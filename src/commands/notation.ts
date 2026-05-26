@@ -163,7 +163,7 @@ export class NotationCommands {
 
 			// Read file content and look for existing track
 			void app.vault.read(activeFile).then((content) => {
-				const trackRegex = new RegExp(`\\[Track:${trackName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+(\\d+)/(\\d+)\\]`, 'g');
+			const trackRegex = new RegExp(`\\[Track:${trackName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+([\\d.]+)/([\\d.]+)\\]`, 'g');
 				let lastMatch: RegExpMatchArray | null = null;
 				let match: RegExpMatchArray | null;
 
@@ -175,8 +175,8 @@ export class NotationCommands {
 				let text: string;
 				if (lastMatch && lastMatch[1] && lastMatch[2]) {
 					// Track exists - increment the counter
-					const currentValue = parseInt(lastMatch[1]);
-					const maxFromDoc = parseInt(lastMatch[2]);
+					const currentValue = parseFloat(lastMatch[1]);
+					const maxFromDoc = parseFloat(lastMatch[2]);
 					const newValue = Math.min(currentValue + 1, maxFromDoc);
 					text = `[Track:${trackName} ${newValue}/${maxFromDoc}]`;
 				} else {

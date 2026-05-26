@@ -1,55 +1,80 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - "[0-9]+.[0-9]+.[0-9]+"
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
-    contents: write
+  contents: write
+  id-token: write
+  attestations: write
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Use Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "22.x"
-                  cache: "npm"
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Lint
-              run: npm run lint
+      - name: Lint
+        run: npm run lint
 
-            - name: Build
-              run: npm run build
+      - name: Build
+        run: npm run build
 
-            - name: Verify release files exist
-              run: |
-                  test -f main.js   || (echo "main.js not found" && exit 1)
-                  test -f manifest.json || (echo "manifest.json not found" && exit 1)
-                  test -f styles.css || (echo "styles.css not found" && exit 1)
+      - name: Verify release files exist
+        run: |
+          test -f main.js || (echo "main.js not found" && exit 1)
+          test -f manifest.json || (echo "manifest.json not found" && exit 1)
+          test -f styles.css || (echo "styles.css not found" && exit 1)
+          test -f CHANGELOG.md || (echo "CHANGELOG.md not found" && exit 1)
 
-            - name: Verify tag matches manifest version
-              run: |
-                  TAG="${GITHUB_REF_NAME}"
-                  MANIFEST_VERSION=$(node -e "console.log(require('./manifest.json').version)")
-                  if [ "$TAG" != "$MANIFEST_VERSION" ]; then
-                    echo "Tag ($TAG) does not match manifest version ($MANIFEST_VERSION)"
-                    exit 1
-                  fi
+      - name: Verify tag matches manifest version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          MANIFEST_VERSION=$(node -e "console.log(require('./manifest.json').version)")
+          if [ "$TAG" != "$MANIFEST_VERSION" ]; then
+            echo "Tag ($TAG) does not match manifest version ($MANIFEST_VERSION)"
+            exit 1
+          fi
 
-            - name: Create GitHub release
-              uses: softprops/action-gh-release@v2
-              with:
-                  files: |
-                      main.js
-                      manifest.json
-                      styles.css
-                  generate_release_notes: true
+      - name: Extract release notes from CHANGELOG.md
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          awk -v tag="$TAG" '
+            $0 ~ "^## \\[" tag "\\]" { found=1; next }
+            found && $0 ~ "^## \\[" { exit }
+            found { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md
+
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "No release notes found for version $TAG in CHANGELOG.md"
+            exit 1
+          fi
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            main.js
+            manifest.json
+            styles.css
+          body_path: RELEASE_NOTES.md
