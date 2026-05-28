@@ -1643,7 +1643,7 @@ If your plugin does not need CSS, delete this file.
 }
 
 .lonelog-about-text {
-	font-size: 0.45rem;
+	font-size: 0.9rem;
 	color: var(--text-normal);
 }
 
@@ -1657,7 +1657,7 @@ If your plugin does not need CSS, delete this file.
 .lonelog-about-link {
 	color: var(--text-accent);
 	text-decoration: none;
-	font-size: 0.5rem;
+	font-size: 0.9rem;
 	font-weight: 500;
 }
 
@@ -1668,6 +1668,129 @@ If your plugin does not need CSS, delete this file.
 
 .lonelog-link-separator {
 	color: var(--text-muted);
+}
+
+/* Settings Redesign */
+.lonelog-settings-shell {
+	display: grid;
+	grid-template-columns: 220px minmax(0, 1fr);
+	gap: 24px;
+	align-items: start;
+}
+
+.lonelog-settings-sidebar {
+	position: sticky;
+	top: 0;
+	background: linear-gradient(180deg, var(--background-secondary), var(--background-primary));
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 14px;
+	padding: 16px 14px;
+}
+
+.lonelog-settings-sidebar-title {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	margin-bottom: 12px;
+}
+
+.lonelog-settings-nav {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.lonelog-settings-nav-item {
+	width: 100%;
+	text-align: left;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--text-normal);
+	padding: 10px 12px;
+	border-radius: 10px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.lonelog-settings-nav-item:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+	transform: translateX(1px);
+}
+
+.lonelog-settings-nav-item.is-active {
+	background: color-mix(in srgb, var(--interactive-accent) 14%, var(--background-primary));
+	border-color: color-mix(in srgb, var(--interactive-accent) 30%, var(--background-modifier-border));
+	color: var(--text-normal);
+}
+
+.lonelog-settings-content {
+	min-width: 0;
+}
+
+.lonelog-settings-panel-title {
+	margin: 0 0 16px;
+	font-size: 28px;
+	line-height: 1.1;
+	letter-spacing: -0.02em;
+}
+
+.lonelog-settings-panel-description {
+	margin-bottom: 18px;
+	max-width: 72ch;
+}
+
+.lonelog-settings-subsection {
+	margin-bottom: 24px;
+	padding: 14px 16px 4px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 14px;
+}
+
+.lonelog-settings-subsection-title {
+	margin: 0 0 10px;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.lonelog-addon-badge {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 8px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+.lonelog-addon-badge.is-active {
+	background: color-mix(in srgb, var(--color-green) 18%, var(--background-primary));
+	color: var(--color-green);
+}
+
+.lonelog-version-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 12px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--interactive-accent) 14%, var(--background-primary));
+	border: 1px solid color-mix(in srgb, var(--interactive-accent) 24%, var(--background-modifier-border));
+	font-family: var(--font-monospace);
+	font-size: 13px;
+	font-weight: 700;
 }
 
 /* Reduced boldness overrides */
@@ -1723,4 +1846,23 @@ If your plugin does not need CSS, delete this file.
 .ll-reduced-boldness .ll-round,
 .ll-reduced-boldness .ll-ed-round {
 	font-weight: 600;
+}
+
+@media (max-width: 900px) {
+	.lonelog-settings-shell {
+		grid-template-columns: 1fr;
+	}
+
+	.lonelog-settings-sidebar {
+		position: static;
+	}
+
+	.lonelog-settings-nav {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	.lonelog-settings-nav-item {
+		width: auto;
+	}
 }

@@ -38,6 +38,16 @@ export interface Token {
 	text: string;
 }
 
+interface InlineTokenMatch {
+	start: number;
+	end: number;
+	type: TokenType;
+}
+
+interface MultilineTagState {
+	type: TokenType;
+}
+
 /** Line-start token patterns (checked in order) */
 const LINE_START_PATTERNS: Array<{ pattern: RegExp; type: Exclude<TokenType, "result" | "tag" | "text"> }> = [
 	{ pattern: /^@(?:\([^)]+\))?/, type: "action" },
@@ -62,6 +72,148 @@ const RESULT_ARROW_RE = /->/g;
 
 /** Bracket tag pattern — supports multi-line and inline update suffix like [Clock:Name 0/6 ->2/6] or [Track:Name 1.5/10] */
 const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth)):[^\]]*(?:->\s*[\d./]+)?\]/g;
+const MULTILINE_TAG_START_RE = /\[(#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth)):/i;
+
+function getTagTokenType(tagText: string): TokenType {
+	if (tagText.startsWith("[F:") || tagText.startsWith("[#F:")) return "foe";
+	if (tagText.startsWith("[R:") || tagText.startsWith("[#R:")) return "room";
+	if (tagText.startsWith("[Inv:") || tagText.startsWith("[#Inv:")) return "inventory";
+	if (tagText.startsWith("[Wealth:") || tagText.startsWith("[#Wealth:")) return "wealth";
+	return "tag";
+}
+
+function buildInlineTagTokens(lineText: string): InlineTokenMatch[] {
+	const inlineTokens: InlineTokenMatch[] = [];
+
+	BRACKET_TAG_RE.lastIndex = 0;
+	let match: RegExpExecArray | null;
+	while ((match = BRACKET_TAG_RE.exec(lineText)) !== null) {
+		const tagText = match[0];
+		const type = getTagTokenType(tagText);
+
+		if (tagText.includes("->")) {
+			const arrowIndex = tagText.indexOf("->");
+			inlineTokens.push({
+				start: match.index,
+				end: match.index + arrowIndex,
+				type,
+			});
+			inlineTokens.push({
+				start: match.index + arrowIndex + 2,
+				end: match.index + tagText.length,
+				type,
+			});
+		} else {
+			inlineTokens.push({
+				start: match.index,
+				end: match.index + tagText.length,
+				type,
+			});
+		}
+	}
+
+	return inlineTokens;
+}
+
+function buildLineTokens(lineText: string, lineType: TokenType | null, inlineTokens: InlineTokenMatch[]): Token[] {
+	const tokens: Token[] = [];
+	inlineTokens.sort((a, b) => a.start - b.start);
+
+	if (lineType) {
+		let pos = 0;
+
+		for (const inline of inlineTokens) {
+			if (inline.start > pos) {
+				tokens.push({
+					type: lineType,
+					start: pos,
+					end: inline.start,
+					text: lineText.slice(pos, inline.start),
+				});
+			}
+
+			tokens.push({
+				type: inline.type,
+				start: inline.start,
+				end: inline.end,
+				text: lineText.slice(inline.start, inline.end),
+			});
+			pos = inline.end;
+		}
+
+		if (pos < lineText.length) {
+			tokens.push({
+				type: lineType,
+				start: pos,
+				end: lineText.length,
+				text: lineText.slice(pos),
+			});
+		}
+	} else {
+		let pos = 0;
+
+		for (const inline of inlineTokens) {
+			if (inline.start > pos) {
+				tokens.push({
+					type: "text",
+					start: pos,
+					end: inline.start,
+					text: lineText.slice(pos, inline.start),
+				});
+			}
+
+			tokens.push({
+				type: inline.type,
+				start: inline.start,
+				end: inline.end,
+				text: lineText.slice(inline.start, inline.end),
+			});
+			pos = inline.end;
+		}
+
+		if (pos < lineText.length) {
+			tokens.push({
+				type: "text",
+				start: pos,
+				end: lineText.length,
+				text: lineText.slice(pos),
+			});
+		}
+	}
+
+	return tokens;
+}
+
+function tokenizeStandaloneLine(lineText: string): Token[] {
+	const trimmed = lineText.trimStart();
+	let lineType: TokenType | null = null;
+
+	for (const { pattern, type } of LINE_START_PATTERNS) {
+		const match = trimmed.match(pattern);
+		if (match) {
+			lineType = type;
+			break;
+		}
+	}
+
+	const inlineTokens: InlineTokenMatch[] = [];
+
+	if (lineType !== "consequence") {
+		RESULT_ARROW_RE.lastIndex = 0;
+		let match: RegExpExecArray | null;
+		while ((match = RESULT_ARROW_RE.exec(lineText)) !== null) {
+			if (match.index > 0 && lineText[match.index - 1] === "=") continue;
+			inlineTokens.push({
+				start: match.index,
+				end: match.index + 2,
+				type: "result",
+			});
+		}
+	}
+
+	inlineTokens.push(...buildInlineTagTokens(lineText));
+	return buildLineTokens(lineText, lineType, inlineTokens);
+}
 
 // ---------------------------------------------------------------------------
 // Tokenizer
@@ -76,149 +228,84 @@ const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Weal
  * 2. Inline tokens (-> and [...]) - override line color
  */
 export function tokenizeLine(lineText: string): Token[] {
-	const tokens: Token[] = [];
-	const trimmed = lineText.trimStart();
+	return tokenizeStandaloneLine(lineText);
+}
 
-	// Check for line-start token
-	let lineType: TokenType | null = null;
+export function tokenizeLines(lines: string[]): Token[][] {
+	const tokenLines: Token[][] = [];
+	let multilineState: MultilineTagState | null = null;
 
-	for (const { pattern, type } of LINE_START_PATTERNS) {
-		const match = trimmed.match(pattern);
-		if (match) {
-			lineType = type;
-			break;
-		}
-	}
+	for (const lineText of lines) {
+		if (multilineState) {
+			const closingIndex = lineText.indexOf("]");
+			if (closingIndex === -1) {
+				tokenLines.push(lineText.length > 0 ? [{
+					type: multilineState.type,
+					start: 0,
+					end: lineText.length,
+					text: lineText,
+				}] : []);
+				continue;
+			}
 
-	// Collect inline token positions (-> and [...])
-	const inlineTokens: Array<{ start: number; end: number; type: TokenType }> = [];
-
-	// Find result arrows (skip if line starts with => to avoid matching the >)
-	if (lineType !== "consequence") {
-		RESULT_ARROW_RE.lastIndex = 0;
-		let m: RegExpExecArray | null;
-		while ((m = RESULT_ARROW_RE.exec(lineText)) !== null) {
-			// Skip if it's part of =>
-			if (m.index > 0 && lineText[m.index - 1] === "=") continue;
-			inlineTokens.push({
-				start: m.index,
-				end: m.index + 2,
-				type: "result",
-			});
-		}
-	}
-
-	// Find bracket tags
-	BRACKET_TAG_RE.lastIndex = 0;
-	let m: RegExpExecArray | null;
-	while ((m = BRACKET_TAG_RE.exec(lineText)) !== null) {
-		const tagText = m[0];
-		let type: TokenType = "tag";
-		if (tagText.startsWith("[F:") || tagText.startsWith("[#F:")) {
-			type = "foe";
-		} else if (tagText.startsWith("[R:") || tagText.startsWith("[#R:")) {
-			type = "room";
-		} else if (tagText.startsWith("[Inv:") || tagText.startsWith("[#Inv:")) {
-			type = "inventory";
-		} else if (tagText.startsWith("[Wealth:") || tagText.startsWith("[#Wealth:")) {
-			type = "wealth";
-		}
-
-		if(tagText.contains("->")) {
-			inlineTokens.push({
-				start: m.index,
-				end: tagText.indexOf("->"),
-				type: type
-			});
-			inlineTokens.push({
-				start: tagText.indexOf("->")+2,
-				end: tagText.length,
-				type: type
-			});
-		} else if(!tagText.contains("->")){
-			inlineTokens.push({
-				start: m.index,
-				end: m.index + tagText.length,
-				type: type,
-			});
-		}
-
-		
-	}
-
-	// Sort inline tokens by position
-	inlineTokens.sort((a, b) => a.start - b.start);
-
-	// Build final token list
-	// If we have a line-level token, fill gaps between inline tokens with that color
-	if (lineType) {
-		let pos = 0;
-
-		for (const inline of inlineTokens) {
-			// Add line-colored text before this inline token
-			if (inline.start > pos) {
+			const tokens: Token[] = [];
+			if (closingIndex > 0) {
 				tokens.push({
-					type: lineType,
-					start: pos,
-					end: inline.start,
-					text: lineText.slice(pos, inline.start),
+					type: multilineState.type,
+					start: 0,
+					end: closingIndex,
+					text: lineText.slice(0, closingIndex),
 				});
 			}
-			// Add the inline token
 			tokens.push({
-				type: inline.type,
-				start: inline.start,
-				end: inline.end,
-				text: lineText.slice(inline.start, inline.end),
+				type: multilineState.type,
+				start: closingIndex,
+				end: closingIndex + 1,
+				text: "]",
 			});
-			pos = inline.end;
-		}
 
-		// Add remaining line-colored text
-		if (pos < lineText.length) {
-			tokens.push({
-				type: lineType,
-				start: pos,
-				end: lineText.length,
-				text: lineText.slice(pos),
-			});
-		}
-	} else {
-		// No line-level token, just plain text with inline tokens
-		let pos = 0;
-
-		for (const inline of inlineTokens) {
-			// Plain text before token
-			if (inline.start > pos) {
-				tokens.push({
-					type: "text",
-					start: pos,
-					end: inline.start,
-					text: lineText.slice(pos, inline.start),
-				});
+			const remainder = lineText.slice(closingIndex + 1);
+			if (remainder.length > 0) {
+				tokens.push(
+					...tokenizeStandaloneLine(remainder).map((token) => ({
+						...token,
+						start: token.start + closingIndex + 1,
+						end: token.end + closingIndex + 1,
+					}))
+				);
 			}
-			// The token
-			tokens.push({
-				type: inline.type,
-				start: inline.start,
-				end: inline.end,
-				text: lineText.slice(inline.start, inline.end),
-			});
-			pos = inline.end;
+
+			tokenLines.push(tokens);
+			multilineState = null;
+			continue;
 		}
 
-		// Remaining plain text
-		if (pos < lineText.length) {
+		const startMatch = MULTILINE_TAG_START_RE.exec(lineText);
+		const openingIndex = startMatch?.index ?? -1;
+		const closingIndex = openingIndex >= 0 ? lineText.indexOf("]", openingIndex) : -1;
+
+		if (openingIndex >= 0 && closingIndex === -1) {
+			const tokens: Token[] = [];
+			if (openingIndex > 0) {
+				tokens.push(...tokenizeStandaloneLine(lineText.slice(0, openingIndex)));
+			}
+
+			const tagType = getTagTokenType(lineText.slice(openingIndex));
 			tokens.push({
-				type: "text",
-				start: pos,
+				type: tagType,
+				start: openingIndex,
 				end: lineText.length,
-				text: lineText.slice(pos),
+				text: lineText.slice(openingIndex),
 			});
+			tokenLines.push(tokens);
+			multilineState = { type: tagType };
+			continue;
 		}
+
+		tokenLines.push(tokenizeStandaloneLine(lineText));
 	}
 
-	return tokens;
+	return tokenLines;
 }
 
 /**

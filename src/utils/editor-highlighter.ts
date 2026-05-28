@@ -7,7 +7,7 @@
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
 import { Range, RangeSetBuilder } from "@codemirror/state";
 import { EditorState } from "@codemirror/state";
-import { tokenizeLine, getTokenClass } from "./lonelog-tokenizer";
+import { tokenizeLines, getTokenClass, Token } from "./lonelog-tokenizer";
 import { DiceRoller } from "./dice-roller";
 import { CardRoller } from "./card-roller";
 import { TableResolver } from "./table-resolver";
@@ -200,11 +200,17 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
 			// Process everything in the visible range
 			const startLine = doc.lineAt(from).number;
 			const endLine = doc.lineAt(to).number;
+			const lines = [];
 			
 			for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
-				const line = doc.line(lineNum);
+				lines.push(doc.line(lineNum));
+			}
+
+			const tokenLines = tokenizeLines(lines.map((line) => line.text));
+			for (let index = 0; index < lines.length; index++) {
+				const line = lines[index]!;
 				const isBlock = allBlocks.some(b => line.from >= b.from && line.to <= b.to);
-				processLineDecorations(line, decorations, settings, isBlock);
+				processLineDecorations(line, tokenLines[index] || [], decorations, settings, isBlock);
 			}
 		} else {
 			// Filter blocks that overlap with the visible range
@@ -213,11 +219,17 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
 			for (const block of visibleBlocks) {
 				const startLine = doc.lineAt(Math.max(block.from, from)).number;
 				const endLine = doc.lineAt(Math.min(block.to, to)).number;
+				const lines = [];
 
 				for (let lineNum = startLine; lineNum <= endLine; lineNum++) {
 					const line = doc.line(lineNum);
 					if (line.from < block.from || line.to > block.to) continue;
-					processLineDecorations(line, decorations, settings, true);
+					lines.push(line);
+				}
+
+				const tokenLines = tokenizeLines(lines.map((line) => line.text));
+				for (let index = 0; index < lines.length; index++) {
+					processLineDecorations(lines[index]!, tokenLines[index] || [], decorations, settings, true);
 				}
 			}
 		}
@@ -236,6 +248,7 @@ function buildDecorations(view: EditorView, settings: LonelogSettings): Decorati
  */
 function processLineDecorations(
 	line: { from: number; to: number; text: string },
+	tokens: Token[],
 	decorations: Array<Range<Decoration>>,
 	settings: LonelogSettings,
 	isBlock: boolean
@@ -248,9 +261,6 @@ function processLineDecorations(
 		to: line.from,
 		value: Decoration.line({ class: isBlock ? "ll-ed-line ll-ed-block-line" : "ll-ed-line" }),
 	});
-
-	// Tokenize using shared logic
-	const tokens = tokenizeLine(lineText);
 
 	// Convert tokens to CM6 decorations
 	for (const token of tokens) {

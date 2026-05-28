@@ -1,6 +1,6 @@
 {
 	"name": "lonelog",
-	"version": "1.4.8",
+	"version": "1.5.0",
 	"author": "Snifer (Bastion del Dinosaurio)",
 	"description": "Streamline solo TTRPG journaling with Lonelog notation shortcuts and templates.",
 	"main": "main.js",

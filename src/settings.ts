@@ -235,32 +235,37 @@ interface ColorDef {
 	desc: string;
 }
 
-const COLOR_DEFS: ColorDef[] = [
-	{ key: "colorAction", label: "Action (@)", desc: t("settings.colors-desc") },
-	{ key: "colorQuestion", label: "Question (?)", desc: t("settings.colors-desc") },
-	{ key: "colorDice", label: "Dice roll (d:)", desc: t("settings.colors-desc") },
-	{ key: "colorConsequence", label: "Consequence (=>)", desc: t("settings.colors-desc") },
-	{ key: "colorResult", label: "Result arrow (->)", desc: t("settings.colors-desc") },
-	{ key: "colorTag", label: "Tags ([N:…] etc.)", desc: t("settings.colors-desc") },
-	{ key: "colorMeta", label: t("settings.color-meta"), desc: t("settings.color-meta-desc") },
-	{ key: "colorDialogue", label: t("settings.color-dialogue"), desc: t("settings.color-dialogue-desc") },
-	{ key: "colorNarrative", label: t("settings.color-narrative"), desc: t("settings.color-narrative-desc") },
-	{ key: "colorTable", label: t("settings.color-table"), desc: t("settings.color-table-desc") },
-	{ key: "colorGenerator", label: t("settings.color-generator"), desc: t("settings.color-generator-desc") },
-	{ key: "colorScene", label: t("settings.color-scene"), desc: t("settings.color-scene-desc") },
-	{ key: "colorHeader", label: t("settings.color-session"), desc: t("settings.color-session-desc") },
-	{ key: "colorRound", label: t("settings.color-round"), desc: t("settings.color-round-desc") },
-	{ key: "colorCombatBlock", label: t("settings.color-combat"), desc: t("settings.color-combat-desc") },
-	{ key: "colorFoe", label: t("settings.color-foe"), desc: t("settings.color-foe-desc") },
-	{ key: "colorRoom", label: t("settings.color-room"), desc: t("settings.color-room-desc") },
-	{ key: "colorDungeonBlock", label: t("settings.color-dungeon-block"), desc: t("settings.color-dungeon-block-desc") },
-	{ key: "colorInventory", label: t("settings.color-inventory"), desc: t("settings.color-inventory-desc") },
-	{ key: "colorWealth", label: t("settings.color-wealth"), desc: t("settings.color-wealth-desc") },
-	{ key: "colorResourcesBlock", label: t("settings.color-resources-block"), desc: t("settings.color-resources-block-desc") },
-];
+type SettingsSectionKey = "interface" | "notation" | "templates" | "colors" | "dice" | "addons" | "about";
+
+function getColorDefs(): ColorDef[] {
+	return [
+		{ key: "colorAction", label: t("settings.color-action"), desc: t("settings.colors-desc") },
+		{ key: "colorQuestion", label: t("settings.color-question"), desc: t("settings.colors-desc") },
+		{ key: "colorDice", label: t("settings.color-dice"), desc: t("settings.colors-desc") },
+		{ key: "colorConsequence", label: t("settings.color-consequence"), desc: t("settings.colors-desc") },
+		{ key: "colorResult", label: t("settings.color-result"), desc: t("settings.colors-desc") },
+		{ key: "colorTag", label: t("settings.color-tag"), desc: t("settings.colors-desc") },
+		{ key: "colorMeta", label: t("settings.color-meta"), desc: t("settings.color-meta-desc") },
+		{ key: "colorDialogue", label: t("settings.color-dialogue"), desc: t("settings.color-dialogue-desc") },
+		{ key: "colorNarrative", label: t("settings.color-narrative"), desc: t("settings.color-narrative-desc") },
+		{ key: "colorTable", label: t("settings.color-table"), desc: t("settings.color-table-desc") },
+		{ key: "colorGenerator", label: t("settings.color-generator"), desc: t("settings.color-generator-desc") },
+		{ key: "colorScene", label: t("settings.color-scene"), desc: t("settings.color-scene-desc") },
+		{ key: "colorHeader", label: t("settings.color-session"), desc: t("settings.color-session-desc") },
+		{ key: "colorRound", label: t("settings.color-round"), desc: t("settings.color-round-desc") },
+		{ key: "colorCombatBlock", label: t("settings.color-combat"), desc: t("settings.color-combat-desc") },
+		{ key: "colorFoe", label: t("settings.color-foe"), desc: t("settings.color-foe-desc") },
+		{ key: "colorRoom", label: t("settings.color-room"), desc: t("settings.color-room-desc") },
+		{ key: "colorDungeonBlock", label: t("settings.color-dungeon-block"), desc: t("settings.color-dungeon-block-desc") },
+		{ key: "colorInventory", label: t("settings.color-inventory"), desc: t("settings.color-inventory-desc") },
+		{ key: "colorWealth", label: t("settings.color-wealth"), desc: t("settings.color-wealth-desc") },
+		{ key: "colorResourcesBlock", label: t("settings.color-resources-block"), desc: t("settings.color-resources-block-desc") },
+	];
+}
 
 export class LonelogSettingTab extends PluginSettingTab {
 	plugin: LonelogPlugin;
+	private activeSection: SettingsSectionKey = "interface";
 
 	constructor(app: App, plugin: LonelogPlugin) {
 		super(app, plugin);
@@ -270,52 +275,109 @@ export class LonelogSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+		containerEl.addClass("lonelog-settings-tab");
 
-		// ── About & Credits ────────────────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.about-section")).setHeading();
+		const shellEl = containerEl.createDiv({ cls: "lonelog-settings-shell" });
+		const sidebarEl = shellEl.createDiv({ cls: "lonelog-settings-sidebar" });
+		const contentEl = shellEl.createDiv({ cls: "lonelog-settings-content" });
 
-		const aboutDesc = containerEl.createDiv({ cls: "lonelog-about-container" });
+		this.renderSidebar(sidebarEl);
+		this.renderPanel(contentEl);
+	}
 
-		const systemRow = aboutDesc.createDiv({ cls: "lonelog-about-row" });
-		systemRow.createSpan({ text: "🖋️ " });
-		systemRow.createEl("a", {
-			text: t("settings.about-system"),
-			href: "https://zeruhur.itch.io/lonelog",
-			cls: "lonelog-about-text"
+	private renderSidebar(containerEl: HTMLElement): void {
+		containerEl.empty();
+		containerEl.createEl("div", { cls: "lonelog-settings-sidebar-title", text: t("settings.header") });
+
+		const sections: Array<{ key: SettingsSectionKey; label: string }> = [
+			{ key: "interface", label: t("settings.nav-interface") },
+			{ key: "notation", label: t("settings.nav-notation") },
+			{ key: "templates", label: t("settings.nav-templates") },
+			{ key: "colors", label: t("settings.nav-colors") },
+			{ key: "dice", label: t("settings.nav-dice") },
+			{ key: "addons", label: t("settings.nav-addons") },
+			{ key: "about", label: t("settings.nav-about") },
+		];
+
+		const navEl = containerEl.createDiv({ cls: "lonelog-settings-nav" });
+		for (const section of sections) {
+			const button = navEl.createEl("button", {
+				cls: section.key === this.activeSection
+					? "lonelog-settings-nav-item is-active"
+					: "lonelog-settings-nav-item",
+				text: section.label,
+			});
+
+			button.addEventListener("click", () => {
+				if (this.activeSection === section.key) return;
+				this.activeSection = section.key;
+				this.display();
+			});
+		}
+	}
+
+	private renderPanel(containerEl: HTMLElement): void {
+		containerEl.empty();
+		containerEl.createEl("h2", {
+			cls: "lonelog-settings-panel-title",
+			text: this.getSectionTitle(this.activeSection),
 		});
 
-		const devRow = aboutDesc.createDiv({ cls: "lonelog-about-row" });
-		devRow.createSpan({ text: "💻 " });
-		devRow.createSpan({ text: t("settings.about-dev"), cls: "lonelog-about-text" });
+		switch (this.activeSection) {
+			case "interface":
+				this.renderInterfacePanel(containerEl);
+				break;
+			case "notation":
+				this.renderNotationPanel(containerEl);
+				break;
+			case "templates":
+				this.renderTemplatesPanel(containerEl);
+				break;
+			case "colors":
+				this.renderColorsPanel(containerEl);
+				break;
+			case "dice":
+				this.renderDicePanel(containerEl);
+				break;
+			case "addons":
+				this.renderAddonsPanel(containerEl);
+				break;
+			case "about":
+				this.renderAboutPanel(containerEl);
+				break;
+		}
+	}
 
-		const linksCol = aboutDesc.createDiv({ cls: "lonelog-about-links" });
+	private getSectionTitle(section: SettingsSectionKey): string {
+		const titles: Record<SettingsSectionKey, string> = {
+			interface: t("settings.nav-interface"),
+			notation: t("settings.nav-notation"),
+			templates: t("settings.nav-templates"),
+			colors: t("settings.nav-colors"),
+			dice: t("settings.nav-dice"),
+			addons: t("settings.nav-addons"),
+			about: t("settings.nav-about"),
+		};
+		return titles[section];
+	}
 
-		linksCol.createEl("a", {
-			text: t("settings.youtube-link"),
-			href: "https://www.youtube.com/@BastiondelDinosaurio",
-			cls: "lonelog-about-link"
+	private renderSubsection(containerEl: HTMLElement, title: string): HTMLElement {
+		const sectionEl = containerEl.createDiv({ cls: "lonelog-settings-subsection" });
+		sectionEl.createEl("h3", { cls: "lonelog-settings-subsection-title", text: title });
+		return sectionEl;
+	}
+
+	private addAddonBadge(setting: Setting, enabled: boolean): void {
+		setting.nameEl.createSpan({
+			cls: enabled ? "lonelog-addon-badge is-active" : "lonelog-addon-badge",
+			text: enabled ? t("settings.status-active") : t("settings.status-inactive"),
 		});
+	}
 
-		linksCol.createSpan({ text: " • ", cls: "lonelog-link-separator" });
+	private renderInterfacePanel(containerEl: HTMLElement): void {
+		const languageSection = this.renderSubsection(containerEl, t("settings.subsection-language-view"));
 
-		linksCol.createEl("a", {
-			text: t("settings.paypal-link"),
-			href: "https://paypal.me/sniferl4bs",
-			cls: "lonelog-about-link"
-		});
-
-		linksCol.createSpan({ text: " • ", cls: "lonelog-link-separator" });
-
-		linksCol.createEl("a", {
-			text: t("settings.funding-link"),
-			href: "https://ko-fi.com/bastiondeldino",
-			cls: "lonelog-about-link"
-		});
-
-		// ── Interface ──────────────────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.interface-section")).setHeading();
-
-		new Setting(containerEl)
+		new Setting(languageSection)
 			.setName(t("settings.language"))
 			.setDesc(t("settings.language-desc"))
 			.addDropdown((dropdown) =>
@@ -327,11 +389,11 @@ export class LonelogSettingTab extends PluginSettingTab {
 						this.plugin.settings.locale = value;
 						setLocale(value);
 						await this.plugin.saveSettings();
-						this.display(); // Refresh tab to update labels
+						this.display();
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(languageSection)
 			.setName(t("settings.default-view"))
 			.setDesc(t("settings.default-view-desc"))
 			.addDropdown((dropdown) =>
@@ -349,145 +411,9 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
+		const editorSection = this.renderSubsection(containerEl, t("settings.subsection-syntax-editor"));
 
-		// ── Core Notation ──────────────────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.core-section")).setHeading();
-
-		new Setting(containerEl)
-			.setName(t("settings.insert-space"))
-			.setDesc(t("settings.insert-space-desc"))
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.insertSpaceAfterSymbol)
-					.onChange(async (value) => {
-						this.plugin.settings.insertSpaceAfterSymbol = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t("settings.smart-cursor"))
-			.setDesc(t("settings.smart-cursor-desc"))
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.smartCursorPositioning)
-					.onChange(async (value) => {
-						this.plugin.settings.smartCursorPositioning = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		// ── Templates ──────────────────────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.templates-section")).setHeading();
-
-		new Setting(containerEl)
-			.setName(t("settings.auto-scene"))
-			.setDesc(t("settings.auto-scene-desc"))
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.autoIncrementScenes)
-					.onChange(async (value) => {
-						this.plugin.settings.autoIncrementScenes = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t("settings.prompt-context"))
-			.setDesc(t("settings.prompt-context-desc"))
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.promptForSceneContext)
-					.onChange(async (value) => {
-						this.plugin.settings.promptForSceneContext = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		// ── Frontmatter ────────────────────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.frontmatter-section")).setHeading();
-
-		new Setting(containerEl)
-			.setName(t("settings.default-ruleset"))
-			.setDesc(t("settings.default-ruleset-desc"))
-			.addText((text) =>
-				text
-					.setPlaceholder("Loner + mythic oracle")
-					.setValue(this.plugin.settings.defaultRuleset)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultRuleset = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t("settings.default-genre"))
-			.setDesc(t("settings.default-genre-desc"))
-			.addText((text) =>
-				text
-					.setPlaceholder("Teen mystery")
-					.setValue(this.plugin.settings.defaultGenre)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultGenre = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t("settings.default-player"))
-			.setDesc(t("settings.default-player-desc"))
-			.addText((text) =>
-				text
-					.setPlaceholder("Alex")
-					.setValue(this.plugin.settings.defaultPlayer)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultPlayer = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t("settings.default-themes"))
-			.setDesc(t("settings.default-themes-desc"))
-			.addText((text) =>
-				text
-					.setPlaceholder("Friendship, courage")
-					.setValue(this.plugin.settings.defaultThemes)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultThemes = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t("settings.default-tone"))
-			.setDesc(t("settings.default-tone-desc"))
-			.addText((text) =>
-				text
-					.setPlaceholder("Eerie but playful")
-					.setValue(this.plugin.settings.defaultTone)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultTone = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName(t("settings.auto-update-last-update"))
-			.setDesc(t("settings.auto-update-last-update-desc"))
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.autoUpdateLastUpdate)
-					.onChange(async (value) => {
-						this.plugin.settings.autoUpdateLastUpdate = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
-		// ── Highlighting ───────────────────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.highlight-section")).setHeading();
-
-		new Setting(containerEl)
+		new Setting(editorSection)
 			.setName(t("settings.token-font-weight"))
 			.setDesc(t("settings.token-font-weight-desc"))
 			.addDropdown((dropdown) =>
@@ -504,7 +430,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(editorSection)
 			.setName(t("settings.block-font-family"))
 			.setDesc(t("settings.block-font-family-desc"))
 			.addText((text) =>
@@ -518,7 +444,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(editorSection)
 			.setName(t("settings.block-font-size"))
 			.setDesc(t("settings.block-font-size-desc"))
 			.addText((text) =>
@@ -532,7 +458,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(editorSection)
 			.setName(t("settings.enable-editor"))
 			.setDesc(t("settings.enable-editor-desc"))
 			.addToggle((toggle) =>
@@ -541,17 +467,16 @@ export class LonelogSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.enableEditorHighlighting = value;
 						await this.plugin.saveSettings();
-						// Suggest reload for extension changes to take effect
 						if (!value) {
-							containerEl.createEl("div", {
-								text: "Reload Obsidian for this change to take full effect",
+							editorSection.createEl("div", {
+								text: t("settings.reload-warning"),
 								cls: "setting-item-description mod-warning",
 							});
 						}
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(editorSection)
 			.setName(t("settings.enable-reading"))
 			.setDesc(t("settings.enable-reading-desc"))
 			.addToggle((toggle) =>
@@ -563,7 +488,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(editorSection)
 			.setName(t("settings.enable-global"))
 			.setDesc(t("settings.enable-global-desc"))
 			.addToggle((toggle) =>
@@ -574,74 +499,169 @@ export class LonelogSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+	}
 
-		// ── Add-ons ────────────────────────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.addons-section")).setHeading();
+	private renderNotationPanel(containerEl: HTMLElement): void {
+		const insertSection = this.renderSubsection(containerEl, t("settings.subsection-insertion"));
 
-		new Setting(containerEl)
-			.setName(t("settings.enable-combat"))
-			.setDesc(t("settings.enable-combat-desc"))
+		new Setting(insertSection)
+			.setName(t("settings.insert-space"))
+			.setDesc(t("settings.insert-space-desc"))
 			.addToggle((toggle) =>
 				toggle
-					.setValue(this.plugin.settings.enableCombatAddon)
+					.setValue(this.plugin.settings.insertSpaceAfterSymbol)
 					.onChange(async (value) => {
-						this.plugin.settings.enableCombatAddon = value;
+						this.plugin.settings.insertSpaceAfterSymbol = value;
 						await this.plugin.saveSettings();
 					})
 			);
 
-		new Setting(containerEl)
-			.setName(t("settings.enable-dungeon"))
-			.setDesc(t("settings.enable-dungeon-desc"))
+		new Setting(insertSection)
+			.setName(t("settings.smart-cursor"))
+			.setDesc(t("settings.smart-cursor-desc"))
 			.addToggle((toggle) =>
 				toggle
-					.setValue(this.plugin.settings.enableDungeonAddon)
+					.setValue(this.plugin.settings.smartCursorPositioning)
 					.onChange(async (value) => {
-						this.plugin.settings.enableDungeonAddon = value;
+						this.plugin.settings.smartCursorPositioning = value;
+						await this.plugin.saveSettings();
+					})
+			);
+	}
+
+	private renderTemplatesPanel(containerEl: HTMLElement): void {
+		const scenesSection = this.renderSubsection(containerEl, t("settings.subsection-scenes"));
+
+		new Setting(scenesSection)
+			.setName(t("settings.auto-scene"))
+			.setDesc(t("settings.auto-scene-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.autoIncrementScenes)
+					.onChange(async (value) => {
+						this.plugin.settings.autoIncrementScenes = value;
 						await this.plugin.saveSettings();
 					})
 			);
 
-		new Setting(containerEl)
-			.setName(t("settings.enable-resources"))
-			.setDesc(t("settings.enable-resources-desc"))
+		new Setting(scenesSection)
+			.setName(t("settings.prompt-context"))
+			.setDesc(t("settings.prompt-context-desc"))
 			.addToggle((toggle) =>
 				toggle
-					.setValue(this.plugin.settings.enableResourceAddon)
+					.setValue(this.plugin.settings.promptForSceneContext)
 					.onChange(async (value) => {
-						this.plugin.settings.enableResourceAddon = value;
+						this.plugin.settings.promptForSceneContext = value;
 						await this.plugin.saveSettings();
 					})
 			);
 
-		new Setting(containerEl)
-			.setName(t("settings.enable-card"))
-			.setDesc(t("settings.enable-card-desc"))
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.enableCardAddon)
+		const frontmatterSection = this.renderSubsection(containerEl, t("settings.subsection-frontmatter-defaults"));
+
+		new Setting(frontmatterSection)
+			.setName(t("settings.default-ruleset"))
+			.setDesc(t("settings.default-ruleset-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Loner + mythic oracle")
+					.setValue(this.plugin.settings.defaultRuleset)
 					.onChange(async (value) => {
-						this.plugin.settings.enableCardAddon = value;
+						this.plugin.settings.defaultRuleset = value;
 						await this.plugin.saveSettings();
 					})
 			);
 
-		new Setting(containerEl)
-			.setName(t("settings.enable-dice-notation"))
-			.setDesc(t("settings.enable-dice-notation-desc"))
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.enableDiceNotationAddon)
+		new Setting(frontmatterSection)
+			.setName(t("settings.default-genre"))
+			.setDesc(t("settings.default-genre-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Teen mystery")
+					.setValue(this.plugin.settings.defaultGenre)
 					.onChange(async (value) => {
-						this.plugin.settings.enableDiceNotationAddon = value;
+						this.plugin.settings.defaultGenre = value;
 						await this.plugin.saveSettings();
 					})
 			);
 
-		// ── Extras & Interactive Tools ─────────────────────────────────────
-		new Setting(containerEl).setName(t("settings.extras-section")).setHeading();
+		new Setting(frontmatterSection)
+			.setName(t("settings.default-player"))
+			.setDesc(t("settings.default-player-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Alex")
+					.setValue(this.plugin.settings.defaultPlayer)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultPlayer = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
-		new Setting(containerEl)
+		new Setting(frontmatterSection)
+			.setName(t("settings.default-themes"))
+			.setDesc(t("settings.default-themes-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Friendship, courage")
+					.setValue(this.plugin.settings.defaultThemes)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultThemes = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(frontmatterSection)
+			.setName(t("settings.default-tone"))
+			.setDesc(t("settings.default-tone-desc"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Eerie but playful")
+					.setValue(this.plugin.settings.defaultTone)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultTone = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(frontmatterSection)
+			.setName(t("settings.auto-update-last-update"))
+			.setDesc(t("settings.auto-update-last-update-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.autoUpdateLastUpdate)
+					.onChange(async (value) => {
+						this.plugin.settings.autoUpdateLastUpdate = value;
+						await this.plugin.saveSettings();
+					})
+			);
+	}
+
+	private renderColorsPanel(containerEl: HTMLElement): void {
+		containerEl.createEl("p", {
+			text: t("settings.colors-desc"),
+			cls: "setting-item-description lonelog-settings-panel-description",
+		});
+
+		const mainSection = this.renderSubsection(containerEl, t("settings.subsection-main-tokens"));
+		for (const def of getColorDefs().slice(0, 7)) {
+			this.addColorSetting(mainSection, def);
+		}
+
+		const narrativeSection = this.renderSubsection(containerEl, t("settings.subsection-narrative-tokens"));
+		for (const def of getColorDefs().slice(7, 9)) {
+			this.addColorSetting(narrativeSection, def);
+		}
+
+		const addonSection = this.renderSubsection(containerEl, t("settings.subsection-addon-tokens"));
+		for (const def of getColorDefs().slice(9)) {
+			this.addColorSetting(addonSection, def);
+		}
+	}
+
+	private renderDicePanel(containerEl: HTMLElement): void {
+		const rollerSection = this.renderSubsection(containerEl, t("settings.subsection-roller"));
+
+		new Setting(rollerSection)
 			.setName(t("settings.enable-dice-roller"))
 			.setDesc(t("settings.enable-dice-roller-desc"))
 			.addToggle((toggle) =>
@@ -653,7 +673,9 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		const detailSection = this.renderSubsection(containerEl, t("settings.subsection-detail-mode"));
+
+		new Setting(detailSection)
 			.setName(t("settings.dice-detail-mode"))
 			.setDesc(t("settings.dice-detail-mode-desc"))
 			.addToggle((toggle) =>
@@ -665,7 +687,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(detailSection)
 			.setName(t("settings.show-dice-high"))
 			.setDesc(t("settings.show-dice-high-desc"))
 			.addToggle((toggle) =>
@@ -677,7 +699,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(detailSection)
 			.setName(t("settings.dice-high-label"))
 			.setDesc(t("settings.dice-high-label-desc"))
 			.addText((text) =>
@@ -690,7 +712,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(detailSection)
 			.setName(t("settings.show-dice-low"))
 			.setDesc(t("settings.show-dice-low-desc"))
 			.addToggle((toggle) =>
@@ -702,7 +724,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(detailSection)
 			.setName(t("settings.dice-low-label"))
 			.setDesc(t("settings.dice-low-label-desc"))
 			.addText((text) =>
@@ -715,7 +737,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
+		new Setting(detailSection)
 			.setName(t("settings.card-inline-descriptions"))
 			.setDesc(t("settings.card-inline-descriptions-desc"))
 			.addToggle((toggle) =>
@@ -726,17 +748,122 @@ export class LonelogSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+	}
 
-		new Setting(containerEl).setName(t("settings.colors-header")).setHeading();
-		containerEl.createEl("p", {
-			text: t("settings.colors-desc"),
-			cls: "setting-item-description",
+	private renderAddonsPanel(containerEl: HTMLElement): void {
+		const combatSection = this.renderSubsection(containerEl, t("settings.subsection-combat-exploration"));
+		const combatSetting = new Setting(combatSection)
+			.setName(t("settings.enable-combat"))
+			.setDesc(t("settings.enable-combat-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableCombatAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enableCombatAddon = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+		this.addAddonBadge(combatSetting, this.plugin.settings.enableCombatAddon);
+
+		const dungeonSetting = new Setting(combatSection)
+			.setName(t("settings.enable-dungeon"))
+			.setDesc(t("settings.enable-dungeon-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableDungeonAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enableDungeonAddon = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+		this.addAddonBadge(dungeonSetting, this.plugin.settings.enableDungeonAddon);
+
+		const resourceSection = this.renderSubsection(containerEl, t("settings.subsection-resources-inventory"));
+		const resourcesSetting = new Setting(resourceSection)
+			.setName(t("settings.enable-resources"))
+			.setDesc(t("settings.enable-resources-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableResourceAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enableResourceAddon = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+		this.addAddonBadge(resourcesSetting, this.plugin.settings.enableResourceAddon);
+
+		const cardsSection = this.renderSubsection(containerEl, t("settings.subsection-cards-advanced-dice"));
+		const cardSetting = new Setting(cardsSection)
+			.setName(t("settings.enable-card"))
+			.setDesc(t("settings.enable-card-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableCardAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enableCardAddon = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+		this.addAddonBadge(cardSetting, this.plugin.settings.enableCardAddon);
+
+		const diceNotationSetting = new Setting(cardsSection)
+			.setName(t("settings.enable-dice-notation"))
+			.setDesc(t("settings.enable-dice-notation-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableDiceNotationAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enableDiceNotationAddon = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
+		this.addAddonBadge(diceNotationSetting, this.plugin.settings.enableDiceNotationAddon);
+	}
+
+	private renderAboutPanel(containerEl: HTMLElement): void {
+		const versionSection = this.renderSubsection(containerEl, t("settings.subsection-version"));
+		versionSection.createDiv({ cls: "lonelog-version-badge", text: this.plugin.manifest.version });
+
+		const authorSection = this.renderSubsection(containerEl, t("settings.subsection-authorship"));
+		const aboutDesc = authorSection.createDiv({ cls: "lonelog-about-container" });
+
+		const systemRow = aboutDesc.createDiv({ cls: "lonelog-about-row" });
+		systemRow.createSpan({ text: "🖋️ " });
+		systemRow.createEl("a", {
+			text: t("settings.about-system"),
+			href: "https://zeruhur.itch.io/lonelog",
+			cls: "lonelog-about-text",
 		});
 
-		for (const def of COLOR_DEFS) {
-			this.addColorSetting(containerEl, def);
-		}
+		const devRow = aboutDesc.createDiv({ cls: "lonelog-about-row" });
+		devRow.createSpan({ text: "💻 " });
+		devRow.createSpan({ text: t("settings.about-dev"), cls: "lonelog-about-text" });
 
+		const linksSection = this.renderSubsection(containerEl, t("settings.subsection-links"));
+		const linksCol = linksSection.createDiv({ cls: "lonelog-about-links" });
+
+		linksCol.createEl("a", {
+			text: t("settings.youtube-link"),
+			href: "https://www.youtube.com/@BastiondelDinosaurio",
+			cls: "lonelog-about-link",
+		});
+		linksCol.createSpan({ text: "•", cls: "lonelog-link-separator" });
+		linksCol.createEl("a", {
+			text: t("settings.paypal-link"),
+			href: "https://paypal.me/sniferl4bs",
+			cls: "lonelog-about-link",
+		});
+		linksCol.createSpan({ text: "•", cls: "lonelog-link-separator" });
+		linksCol.createEl("a", {
+			text: t("settings.funding-link"),
+			href: "https://ko-fi.com/bastiondeldino",
+			cls: "lonelog-about-link",
+		});
 	}
 
 	private addColorSetting(containerEl: HTMLElement, def: ColorDef): void {
@@ -788,7 +915,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 		setting.addButton((btn) => {
 			btn
 				.setIcon("rotate-ccw")
-				.setTooltip("Reset to default")
+				.setTooltip(t("settings.reset-default"))
 				.onClick(async () => {
 					this.plugin.settings[def.key] = defaultValue;
 					await this.plugin.saveSettings();

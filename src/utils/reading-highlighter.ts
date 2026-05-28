@@ -5,7 +5,7 @@
  */
 
 import { App, MarkdownPostProcessorContext, TFile } from "obsidian";
-import { tokenizeLine, getTokenClass } from "./lonelog-tokenizer";
+import { tokenizeLines, getTokenClass, Token } from "./lonelog-tokenizer";
 import { DiceRoller } from "./dice-roller";
 import { CardRoller } from "./card-roller";
 import { TableResolver } from "./table-resolver";
@@ -20,15 +20,13 @@ function renderLine(
 	app: App,
 	settings: LonelogSettings,
 	rawLine: string,
+	tokens: Token[],
 	container: HTMLElement,
 	ctx: MarkdownPostProcessorContext,
 	lineIndexInBlock: number, // 0 if not in a code block
 	blockEl: HTMLElement // The element that defines the context for line number mapping
 ): void {
 	const lineEl = container.createEl("div", { cls: "ll-line" });
-
-	// Tokenize the line using shared logic
-	const tokens = tokenizeLine(rawLine);
 
 	// Render each token as a span (or text node if plain text)
 	for (const token of tokens) {
@@ -196,9 +194,11 @@ export const lonelogBlockProcessor = (app: App, settings: LonelogSettings) => (
 		lines.pop();
 	}
 
+	const tokenLines = tokenizeLines(lines);
+
 	lines.forEach((rawLine, index) => {
 		// In a code block, line 0 is the fence, so first content line is offset 1
-		renderLine(app, settings, rawLine, pre, ctx, index + 1, el);
+		renderLine(app, settings, rawLine, tokenLines[index] || [], pre, ctx, index + 1, el);
 	});
 };
 
@@ -241,6 +241,7 @@ function processTarget(
 	// Warning: This might break other Obsidian plugins that rely on the original DOM structure
 	// but for plain text notation it is generally safe.
 	const rawLines = text.split("\n");
+	const tokenLines = tokenizeLines(rawLines);
 	target.empty();
 	target.addClass("ll-global-container");
 	
@@ -248,6 +249,6 @@ function processTarget(
 		// For global elements, we don't have a simple "index in block".
 		// We'll pass 0 and rely on sectionInfo for the start.
 		// Note: SectionInfo for a paragraph returns the line index of the paragraph.
-		renderLine(app, settings, line, target, ctx, 0, target);
+		renderLine(app, settings, line, tokenLines[idx] || [], target, ctx, 0, target);
 	});
 }
