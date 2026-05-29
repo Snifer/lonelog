@@ -3,6 +3,7 @@ import { setLocale, t } from "./i18n/i18n";
 import {
 	DEFAULT_SETTINGS, LonelogSettings, LonelogSettingTab, applyHighlightColors, removeHighlightColors
 } from "./settings";
+import { LonelogApi, PublicLonelogSettings } from "./api";
 import { NotationCommands } from "./commands/notation";
 import { TemplateCommands } from "./commands/templates";
 import { FrontmatterCommands } from "./commands/frontmatter";
@@ -16,10 +17,13 @@ import { DungeonStatusView, DUNGEON_VIEW_TYPE } from "./ui/dungeon-view";
 import { ResourceStatusView, RESOURCE_VIEW_TYPE } from "./ui/resource-view";
 import { lonelogBlockProcessor, lonelogGlobalProcessor } from "./utils/reading-highlighter";
 import { lonelogEditorPlugin } from "./utils/editor-highlighter";
+import { NotationParser } from "./utils/parser";
+import { tokenizeLine, tokenizeLines } from "./utils/lonelog-tokenizer";
 
 export default class LonelogPlugin extends Plugin {
 	settings: LonelogSettings;
 	autoComplete: LonelogAutoComplete;
+	api!: LonelogApi;
 
 	async onload() {
 		console.debug("Loading Lonelog plugin");
@@ -142,6 +146,8 @@ export default class LonelogPlugin extends Plugin {
 		// Register all commands
 		this.registerCommands();
 
+		this.api = this.createApi();
+
 		// Add settings tab
 		this.addSettingTab(new LonelogSettingTab(this.app, this));
 
@@ -171,6 +177,64 @@ export default class LonelogPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	private createApi(): LonelogApi {
+		return {
+			apiVersion: "1",
+			pluginVersion: this.manifest.version,
+			parse: {
+				content: (content: string) => NotationParser.parse(content),
+				file: async (file: TFile) => {
+					const content = await this.app.vault.read(file);
+					return NotationParser.parse(content);
+				},
+				isLonelogNote: (file: TFile) => this.isLonelogNote(file),
+			},
+			tokenize: {
+				line: tokenizeLine,
+				lines: tokenizeLines,
+			},
+			settings: {
+				get: (): Readonly<PublicLonelogSettings> => this.getPublicSettings(),
+			},
+			views: {
+				openDashboard: () => this.activateView(DASHBOARD_VIEW_TYPE),
+				openProgress: () => this.activateView(PROGRESS_VIEW_TYPE),
+				openThreads: () => this.activateView(THREAD_VIEW_TYPE),
+				openScenes: () => this.activateView(SCENE_NAV_TYPE),
+				openCombat: () => this.activateView(COMBAT_VIEW_TYPE),
+				openDungeon: () => this.activateView(DUNGEON_VIEW_TYPE),
+				openResources: () => this.activateView(RESOURCE_VIEW_TYPE),
+				open: (viewType: string) => this.activateView(viewType),
+			},
+		};
+	}
+
+	getPublicSettings(): Readonly<PublicLonelogSettings> {
+		return {
+			locale: this.settings.locale,
+			defaultRibbonView: this.settings.defaultRibbonView,
+			enableEditorHighlighting: this.settings.enableEditorHighlighting,
+			enableReadingHighlighting: this.settings.enableReadingHighlighting,
+			enableGlobalNotation: this.settings.enableGlobalNotation,
+			enableDiceRoller: this.settings.enableDiceRoller,
+			enableCombatAddon: this.settings.enableCombatAddon,
+			enableDungeonAddon: this.settings.enableDungeonAddon,
+			enableResourceAddon: this.settings.enableResourceAddon,
+			enableCardAddon: this.settings.enableCardAddon,
+			enableDiceNotationAddon: this.settings.enableDiceNotationAddon,
+		};
+	}
+
+	isLonelogNote(file: TFile): boolean {
+		if (file.extension !== "md") return false;
+
+		const cache = this.app.metadataCache.getFileCache(file);
+		const fm = cache?.frontmatter;
+		if (!fm) return false;
+
+		return fm.ruleset !== undefined || fm.start_date !== undefined || fm.lonelog !== undefined;
 	}
 
 	registerCommands(): void {
