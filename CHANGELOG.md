@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.5.4]
+
+### Entity Merge Fix: Lonelog Threads PC State
+
+Fixed entity tag merging so `Lonelog Threads` no longer drops previously known PC or NPC attributes when a later mention only updates one field.
+
+### What Changed
+
+- Updated the parser merge logic for repeated entity tags such as `[PC:...]`, `[N:...]`, and `[L:...]`.
+- Changed partial entity updates to merge by attribute key instead of replacing the full tag list.
+- Preserved existing values like `HIT`, `GRIT`, and `WILL` when a later tag only updates one field.
+- Kept support for additive (`+`), removal (`-`), and replacement (`->`) tag update semantics.
+- Added parser tests covering partial PC updates and attribute replacement behavior.
+- `Lonelog Threads` now shows stable combined entity state across multiple mentions.
+- Closes #32.
+- Closes #33.
+
+---
+
 ## [1.5.3]
 
 ### Compatibility Update: Obsidian API and Popout Windows

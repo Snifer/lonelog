@@ -149,7 +149,7 @@ export class NotationParser {
 		let match;
 		while ((match = npcRegex.exec(content)) !== null) {
 			if (!match[1]) continue;
-			if (match.toString()[1]?.contains('#')) continue;
+			if (match[0]?.startsWith("[#")) continue;
 			this.parseEntity(match, content, npcs)
 		}
 		return npcs;
@@ -167,7 +167,7 @@ export class NotationParser {
 		let match;
 		while ((match = locationRegex.exec(content)) !== null) {
 			if (!match[1]) continue;
-			if (match.toString()[1]?.contains('#')) continue;
+			if (match[0]?.startsWith("[#")) continue;
 			this.parseEntity(match, content, locations);
 		}
 
@@ -289,7 +289,7 @@ export class NotationParser {
 		let match;
 		while ((match = pcRegex.exec(content)) !== null) {
 			if (!match[1]) continue;
-			if (match.toString()[1]?.contains('#')) continue;
+			if (match[0]?.startsWith("[#")) continue;
 			this.parseEntity(match, content, pcs);	
 			
 		}
@@ -657,47 +657,99 @@ export class NotationParser {
 			const existing = entity.get(name)!;
 			existing.mentions.push(lineNum);
 			existing.lastMention = lineNum;
-
-			// When an NPC is updated, update tags depending on symbol:
-			// - '-' removes a tag
-			// - '+' adds a tag
-			// - '->' replaces a tag (e.g. "tag1->tag2" replaces "tag1" with "tag2")
-			// - If no symbol, replace all tags with the new set
-			const newTags: Array<string> = []
-
-			tags.forEach((tag: string) => {
-				if(tag.contains('->')){
-					const tagText: string[] = tag.split('->');
-					if (tagText[0] !== undefined && tagText[1] !== undefined) {
-						const changedIndex: number = existing.tags.indexOf(tagText[0].trim());
-						if (changedIndex !== -1) {
-							existing.tags[changedIndex] = tagText[1].trim();
-						}
-					}
-				} else if (tag[0]?.contains('+')) {
-					existing.tags.push(tag.slice(1, tag.length));
-				} else if (tag[0]?.contains('-')) {
-					const tagText = tag.slice(1, tag.length);
-					const removeIndex = existing.tags.indexOf(tagText);
-					existing.tags.splice(removeIndex, 1);
-				}else{
-					newTags.push(tag)
-				} 
-			});
-
-			if (newTags.length !== 0) {
-				existing.tags = newTags;
-			};
+			existing.tags = this.mergeEntityTags(existing.tags, tags);
 		} else {
 			// Create new entry
-			 entity.set(name, {
+				 entity.set(name, {
 				name,
 				tags,
 				mentions: [lineNum],
 				firstMention: lineNum,
 				lastMention: lineNum,
 			});
-		}	
+			}	
+	}
+
+	private static mergeEntityTags(existingTags: string[], incomingTags: string[]): string[] {
+		const merged = [...existingTags];
+
+		incomingTags.forEach((tag) => {
+			if (tag.includes("->")) {
+				const tagText = tag.split("->");
+				if (tagText[0] !== undefined && tagText[1] !== undefined) {
+					const fromTag = tagText[0].trim();
+					const toTag = tagText[1].trim();
+					const changedIndex = merged.indexOf(fromTag);
+					if (changedIndex !== -1) {
+						merged[changedIndex] = toTag;
+					} else {
+						this.upsertEntityTag(merged, toTag);
+					}
+				}
+				return;
+			}
+
+			if (tag.startsWith("+")) {
+				const tagToAdd = tag.slice(1).trim();
+				if (tagToAdd) {
+					this.upsertEntityTag(merged, tagToAdd);
+				}
+				return;
+			}
+
+			if (tag.startsWith("-")) {
+				const tagToRemove = tag.slice(1).trim();
+				if (!tagToRemove) return;
+
+				const removeIndex = merged.findIndex(
+					(existingTag) =>
+						existingTag === tagToRemove ||
+						this.getEntityTagKey(existingTag) === this.getEntityTagKey(tagToRemove)
+				);
+				if (removeIndex !== -1) {
+					merged.splice(removeIndex, 1);
+				}
+				return;
+			}
+
+			this.upsertEntityTag(merged, tag);
+		});
+
+		return merged;
+	}
+
+	private static upsertEntityTag(tags: string[], tag: string): void {
+		const normalizedTag = tag.trim();
+		if (!normalizedTag) return;
+
+		const tagKey = this.getEntityTagKey(normalizedTag);
+		const existingIndex = tags.findIndex(
+			(existingTag) => this.getEntityTagKey(existingTag) === tagKey
+		);
+
+		if (existingIndex !== -1) {
+			tags[existingIndex] = normalizedTag;
+			return;
+		}
+
+		if (!tags.includes(normalizedTag)) {
+			tags.push(normalizedTag);
+		}
+	}
+
+	private static getEntityTagKey(tag: string): string {
+		const trimmedTag = tag.trim();
+		const colonIndex = trimmedTag.indexOf(":");
+		if (colonIndex !== -1) {
+			return trimmedTag.slice(0, colonIndex).trim().toLowerCase();
+		}
+
+		const withoutTrailingValue = trimmedTag.replace(
+			/\s+[-+]?\d+(?:\.\d+)?(?:\s*\/\s*[-+]?\d+(?:\.\d+)?)?$/,
+			""
+		).trim();
+
+		return (withoutTrailingValue || trimmedTag).toLowerCase();
 	}
 
 	/**
