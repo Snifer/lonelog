@@ -1,0 +1,134 @@
+# Lonelog para Obsidian - Diario para Solo TTRPG
+[![Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7C3AED?logo=obsidian)](https://obsidian.md/plugins)
+[![version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/snifer/lonelog/releases)
+[![license](https://img.shields.io/badge/license-0--BSD-green.svg)](LICENSE)
+![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/lonelog/total?logo)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-ff5f5f?logo=ko-fi&logoColor=white)](https://ko-fi.com/bastiondeldino)
+
+Read this in English: [README.md](README.md)
+
+![Lonelog Obsidian Plug-in Logo](./assets/lonelog-obsidian-logo.png)
+
+**Lonelog para Obsidian** optimiza el registro de tus partidas de rol en solitario integrando el estándar de [notación Lonelog](https://zeruhur.itch.io/lonelog) directamente en tu bóveda. Así puedes centrarte en la historia mientras mantienes las mecánicas organizadas, visibles y ágiles.
+
+## Funcionalidades Principales
+
+### 1. Sistema de Notación Inteligente
+Inserta rápidamente los símbolos base de Lonelog mediante la paleta de comandos o atajos personalizados:
+
+- `@` Acción
+- `?` Pregunta de Oráculo
+- `d:` Tirada de Dados
+- `->` Resultado
+- `=>` Consecuencia
+- `[Tag:Name|Attributes]` Etiquetas de entidad para PNJs, lugares, PJs y más
+
+### 2. Gestión de Campaña y Sesiones
+- **Cabeceras automáticas** para crear estructura de campaña y sesión al instante
+- **Marcadores de escena** con numeración automática y contexto opcional
+- **Bloques de código** con soporte de renderizado `lonelog`
+
+```lonelog
+@ El personaje investiga
+d: 1d6 -> 5
+-> Sucede algo sospechoso.
+```
+
+### 3. Interfaz y Resaltado
+- **Resaltado de sintaxis** en Live Preview y modo lectura
+- **Personalización de colores** para cada token de Lonelog
+- **Vistas dedicadas** para progreso, hilos, escenas, combate, mazmorra y recursos
+
+### 4. Add-ons
+- **Combate**: rondas, bloques de combate y seguimiento de enemigos
+- **Dungeon crawling**: seguimiento de habitaciones y estado de mazmorra
+- **Recursos**: gestión de inventario y riqueza
+- **Cartas** y **notación avanzada de dados**
+
+### 5. Otras Características
+- **Autocompletado** basado en entidades mencionadas anteriormente
+- **Internacionalización** en inglés y español
+- **API pública v1** para interoperabilidad con otros plugins de Obsidian
+
+## Instalación
+
+### BRAT
+1. Instala el plugin BRAT.
+2. En la configuración de BRAT, pulsa `Add Beta Plugin`.
+3. Ingresa `https://github.com/Snifer/lonelog`.
+4. Activa Lonelog en `Configuración -> Plugins comunitarios`.
+
+### Instalación Manual
+1. Clona o copia los archivos de release en `.obsidian/plugins/lonelog/`.
+2. Recarga Obsidian.
+3. Activa **Lonelog** en `Configuración -> Plugins comunitarios`.
+
+### Plugins Comunitarios
+Próximamente.
+
+## Uso
+1. Abre cualquier nota.
+2. Pulsa `Ctrl/Cmd + P` para abrir la paleta de comandos.
+3. Escribe `Lonelog` para ver los comandos de inserción y gestión.
+4. Asigna atajos en `Configuración -> Atajos de teclado` para registrar más rápido.
+
+## Desarrollo
+
+```bash
+npm install
+npm run dev
+npm run build
+```
+
+## API Pública
+
+Lonelog expone una API pública inicial para interoperabilidad con otros plugins de Obsidian a través de la instancia del plugin.
+
+Ejemplo:
+
+```ts
+const lonelogPlugin = app.plugins.plugins["lonelog"] as
+  | { api?: import("./src/api").LonelogApi }
+  | undefined;
+
+const api = lonelogPlugin?.api;
+if (!api || api.apiVersion !== "1") return;
+
+const parsed = api.parse.content("[N:Jonah|friendly]");
+const tokens = api.tokenize.line("=> [N:Jonah|friendly]");
+
+await api.views.openDashboard();
+```
+
+Alcance actual de la V1:
+
+- `parse.content`
+- `parse.file`
+- `parse.isLonelogNote`
+- `tokenize.line`
+- `tokenize.lines`
+- `settings.get`
+- `views.open...`
+
+Referencia completa del diseño:
+
+- `lonelog-api-design.md`
+
+## Licencia
+
+Este plugin está bajo la licencia **0-BSD**. Consulta [LICENSE](LICENSE) para más detalles.
+
+El sistema de notación Lonelog es © 2025-2026 Roberto Bisceglie y está licenciado bajo **CC BY-SA 4.0**.
+
+## Soporte
+
+Si este proyecto te aporta valor en tus mesas de juego, puedes apoyar al desarrollador mediante PayPal o Ko-fi.
+
+[![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/sniferl4bs)
+
+## Créditos
+
+- **Autor original del plugin**: Chris Hardiman
+- **Desarrollo actual**: [Snifer](https://www.youtube.com/@BastiondelDinosaurio)
+- **Sistema Lonelog**: [Roberto Bisceglie](https://zeruhur.itch.io/lonelog)
+- **Filosofía de diseño**: Inspirado por el Valley Standard y las prácticas modernas de Solo TTRPG
