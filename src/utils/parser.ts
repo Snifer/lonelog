@@ -527,7 +527,7 @@ export class NotationParser {
 	                existing.quantity = subQty;
 	            } else {
 	                inventory.set(subName, {
-	                    name: subName, quantity: subQty, properties: [],
+	                    name: subName, quantity: subQty, properties: parts.slice(1).filter(p => p),
 	                    mentions: [lineNum], firstMention: lineNum, lastMention: lineNum,
 	                    slotParent: name, isContainer: false,
 	                });

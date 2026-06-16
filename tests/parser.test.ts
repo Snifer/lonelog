@@ -374,4 +374,24 @@ describe('NotationParser', () => {
 	    expect(result.inventory.get('Lantern')?.slotParent).toBe('Backpack 1');
 	    expect(result.inventory.has('Shovel')).toBe(false);
 	});
+
+	test('[Inv:Slot 2|Potion×4|d4] registers Potion with quantity 4 and property d4', () => {
+	    const content = '[Inv:Slot 2|Potion×4|d4]';
+	    const result = NotationParser.parse(content);
+	    const item = result.inventory.get('Potion');
+	    expect(item?.quantity).toBe('4');
+	    expect(item?.properties).toContain('d4');
+	    expect(item?.slotParent).toBe('Slot 2');
+	});
+
+	test('[Inv:Slot 2|Potion×4|d4|great|damages undead] registers Potion with all properties', () => {
+	    const content = '[Inv:Slot 2|Potion×4|d4|great|damages undead]';
+	    const result = NotationParser.parse(content);
+	    const item = result.inventory.get('Potion');
+	    expect(item?.quantity).toBe('4');
+	    expect(item?.properties).toContain('d4');
+	    expect(item?.properties).toContain('great');
+	    expect(item?.properties).toContain('damages undead');
+	    expect(item?.slotParent).toBe('Slot 2');
+	});
 });
