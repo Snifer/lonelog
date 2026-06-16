@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.5.7]
+
+### Inventory Parser Fixes: Bundles, Slot Updates, and Property Mutations
+
+Fixed multiple inventory parsing issues so shorthand item updates, bundle notation, slot-based inventory, and item property mutations now behave consistently with the add-on manual.
+
+### What Changed
+
+- Normalized bundle notation in item names so forms like `[Inv:Arrow×20]` and `[Inv:Arrowx20]` register item `Arrow` with quantity `20`.
+- Fixed shorthand inventory deltas so `[Inv:Torch+2]`, `[Inv:Torch +2]`, and `[Inv:Torch|+2]` follow the same update flow.
+- Routed logical item updates such as `[Inv:Torch-1]`, `[Inv:Torch+2]`, `[Inv:Torch|0]`, and `[Inv:Torch|depleted]` through existing slot/container entries instead of creating duplicate root items.
+- Added deterministic multi-slot consumption and update behavior when the same logical item exists in more than one slot.
+- Fixed inventory property mutation semantics so `+prop`, `-prop`, `prop->new`, and `prop→new` now work for `[Inv:]` items just like entity tags.
+- Ensured property mutations still apply on inventory lines that also include absolute quantities such as `[Inv:Short Sword|1|+enchanted]`.
+- Aligned release metadata and documentation badges to version `1.5.7`.
+- Closes #36.
+- Closes #37.
+
+---
+
 ## [1.5.6]
 
 ### Resource Tracking Fixes: Decimal Wealth and Slot-Based Inventory

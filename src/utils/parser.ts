@@ -390,10 +390,16 @@ export class NotationParser {
 			let name = namePart;
 			let quantity = "";
 			
-			const deltaMatch = namePart.match(/^(.+?)([+-]\d+)$/);
+			const deltaMatch = namePart.match(/^(.+?)\s*([+-]\d+)$/);
 			if (deltaMatch && deltaMatch[1]) {
 				name = deltaMatch[1].trim();
 				quantity = deltaMatch[2] || ""; // e.g. "-1"
+			} else {
+				const bundleMatch = this.parseInventoryBundleName(namePart);
+				if (bundleMatch) {
+					name = bundleMatch.name;
+					quantity = bundleMatch.quantity;
+				}
 			}
 
 			const parts = detailsPart.split("|").map(p => p.trim());
@@ -406,7 +412,22 @@ export class NotationParser {
 
 			if (quantity.match(/^[+-]\d+$/)) {
 				const handled = this.applyInventoryDelta(inventory, name, parseInt(quantity), lineNum);
-				if (handled) continue;
+				if (handled) {
+					if (properties.length > 0) {
+						this.applyInventoryPropertyUpdates(inventory, name, properties);
+					}
+					continue;
+				}
+			}
+
+			if (quantity.match(/^\d+$/) || quantity === "depleted") {
+				const handled = this.applyInventoryAbsoluteQuantity(inventory, name, quantity, lineNum);
+				if (handled) {
+					if (properties.length > 0) {
+						this.applyInventoryPropertyUpdates(inventory, name, properties);
+					}
+					continue;
+				}
 			}
 
 			if (inventory.has(name)) {
@@ -430,9 +451,7 @@ export class NotationParser {
 				}
 
 				// Merge properties
-				properties.forEach(p => {
-					if (!existing.properties.includes(p)) existing.properties.push(p);
-				});
+				existing.properties = this.mergeEntityTags(existing.properties, properties);
 			} else {
 				inventory.set(name, {
 					name,
@@ -454,6 +473,88 @@ export class NotationParser {
 		delta: number,
 		lineNum: number
 	): boolean {
+		const candidates = this.findInventoryQuantityCandidates(inventory, targetName);
+
+		if (candidates.length === 0) return false;
+
+		candidates.sort((a, b) => a.item.firstMention - b.item.firstMention);
+
+		if (delta > 0) {
+			const nestedCandidate = candidates.find(candidate => candidate.type === "nested");
+			const targetCandidate = nestedCandidate || candidates.find(candidate => candidate.type === "direct");
+			if (!targetCandidate) return false;
+
+			this.updateInventoryCandidateQuantity(targetCandidate, targetCandidate.amount + delta);
+			targetCandidate.item.mentions.push(lineNum);
+			targetCandidate.item.lastMention = lineNum;
+			return true;
+		}
+
+		let remaining = Math.abs(delta);
+
+		for (const candidate of candidates) {
+			if (remaining <= 0) break;
+
+			const consumed = Math.min(candidate.amount, remaining);
+			const nextAmount = candidate.amount - consumed;
+
+			this.updateInventoryCandidateQuantity(candidate, nextAmount);
+			candidate.item.mentions.push(lineNum);
+			candidate.item.lastMention = lineNum;
+			remaining -= consumed;
+		}
+
+		return true;
+	}
+
+	private static applyInventoryAbsoluteQuantity(
+		inventory: Map<string, ParsedItem>,
+		targetName: string,
+		quantity: string,
+		lineNum: number
+	): boolean {
+		const candidates = this.findInventoryQuantityCandidates(inventory, targetName);
+		if (candidates.length === 0) return false;
+
+		candidates.sort((a, b) => a.item.firstMention - b.item.firstMention);
+
+		const targetAmount = quantity === "depleted" ? 0 : parseInt(quantity);
+		if (isNaN(targetAmount)) return false;
+
+		let remaining = targetAmount;
+
+		candidates.forEach((candidate, index) => {
+			const nextAmount = index === 0 ? remaining : 0;
+			this.updateInventoryCandidateQuantity(candidate, nextAmount);
+			candidate.item.mentions.push(lineNum);
+			candidate.item.lastMention = lineNum;
+			remaining = 0;
+		});
+
+		return true;
+	}
+
+	private static applyInventoryPropertyUpdates(
+		inventory: Map<string, ParsedItem>,
+		targetName: string,
+		properties: string[]
+	): void {
+		const directItem = inventory.get(targetName);
+		if (!directItem) return;
+
+		directItem.properties = this.mergeEntityTags(directItem.properties, properties);
+	}
+
+	private static findInventoryQuantityCandidates(
+		inventory: Map<string, ParsedItem>,
+		targetName: string
+	): Array<{
+		item: ParsedItem;
+		amount: number;
+		type: "direct" | "nested";
+		nestedName?: string;
+		multiplier?: string;
+	}> {
 		const candidates: Array<{
 			item: ParsedItem;
 			amount: number;
@@ -480,42 +581,27 @@ export class NotationParser {
 			}
 		});
 
-		if (candidates.length === 0) return false;
+		return candidates;
+	}
 
-		candidates.sort((a, b) => a.item.firstMention - b.item.firstMention);
-
-		if (delta > 0) {
-			const directCandidate = candidates.find(candidate => candidate.type === "direct");
-			if (!directCandidate) return false;
-
-			directCandidate.item.quantity = (directCandidate.amount + delta).toString();
-			directCandidate.item.mentions.push(lineNum);
-			directCandidate.item.lastMention = lineNum;
-			return true;
+	private static updateInventoryCandidateQuantity(
+		candidate: {
+			item: ParsedItem;
+			amount: number;
+			type: "direct" | "nested";
+			nestedName?: string;
+			multiplier?: string;
+		},
+		nextAmount: number
+	): void {
+		if (candidate.type === "direct") {
+			candidate.item.quantity = Math.max(0, nextAmount).toString();
+			return;
 		}
 
-		let remaining = Math.abs(delta);
-
-		for (const candidate of candidates) {
-			if (remaining <= 0) break;
-
-			const consumed = Math.min(candidate.amount, remaining);
-			const nextAmount = candidate.amount - consumed;
-
-			if (candidate.type === "direct") {
-				candidate.item.quantity = nextAmount.toString();
-			} else {
-				candidate.item.quantity = nextAmount > 0
-					? `${candidate.nestedName}${candidate.multiplier}${nextAmount}`
-					: "empty";
-			}
-
-			candidate.item.mentions.push(lineNum);
-			candidate.item.lastMention = lineNum;
-			remaining -= consumed;
-		}
-
-		return true;
+		candidate.item.quantity = nextAmount > 0
+			? `${candidate.nestedName}${candidate.multiplier}${nextAmount}`
+			: "empty";
 	}
 
 	private static parseNestedInventoryQuantity(
@@ -528,6 +614,18 @@ export class NotationParser {
 			name: match[1].trim(),
 			amount: parseInt(match[3]),
 			multiplier: match[2],
+		};
+	}
+
+	private static parseInventoryBundleName(
+		namePart: string
+	): { name: string; quantity: string } | null {
+		const match = namePart.trim().match(/^(.+?)\s*([×x])\s*(\d+)$/);
+		if (!match || !match[1] || !match[3]) return null;
+
+		return {
+			name: match[1].trim(),
+			quantity: match[3],
 		};
 	}
 
@@ -885,8 +983,10 @@ export class NotationParser {
 		const merged = [...existingTags];
 
 		incomingTags.forEach((tag) => {
-			if (tag.includes("->")) {
-				const tagText = tag.split("->");
+			const normalizedTag = tag.replace("→", "->");
+
+			if (normalizedTag.includes("->")) {
+				const tagText = normalizedTag.split("->");
 				if (tagText[0] !== undefined && tagText[1] !== undefined) {
 					const fromTag = tagText[0].trim();
 					const toTag = tagText[1].trim();
@@ -900,16 +1000,16 @@ export class NotationParser {
 				return;
 			}
 
-			if (tag.startsWith("+")) {
-				const tagToAdd = tag.slice(1).trim();
+			if (normalizedTag.startsWith("+")) {
+				const tagToAdd = normalizedTag.slice(1).trim();
 				if (tagToAdd) {
 					this.upsertEntityTag(merged, tagToAdd);
 				}
 				return;
 			}
 
-			if (tag.startsWith("-")) {
-				const tagToRemove = tag.slice(1).trim();
+			if (normalizedTag.startsWith("-")) {
+				const tagToRemove = normalizedTag.slice(1).trim();
 				if (!tagToRemove) return;
 
 				const removeIndex = merged.findIndex(
@@ -923,7 +1023,7 @@ export class NotationParser {
 				return;
 			}
 
-			this.upsertEntityTag(merged, tag);
+			this.upsertEntityTag(merged, normalizedTag);
 		});
 
 		return merged;

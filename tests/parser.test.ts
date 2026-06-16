@@ -24,6 +24,34 @@ describe('NotationParser', () => {
 		expect(result.npcs.get('Jonah')?.mentions).toHaveLength(2);
 	});
 
+	test('preserves existing PC stats when a later mention updates only one field', () => {
+		const content = `
+			[PC:Primus|HIT 3|GRIT 5|WILL 4]
+			=> [PC:Primus|HIT 3|GRIT 5|WILL 4|Fichas Aventura 15]
+			[PC:Primus|Fichas Aventura 15]
+		`;
+		const result = NotationParser.parse(content);
+		expect(result.pcs.get('Primus')?.tags).toEqual([
+			'HIT 3',
+			'GRIT 5',
+			'WILL 4',
+			'Fichas Aventura 15',
+		]);
+	});
+
+	test('updates matching PC stat keys without deleting unrelated values', () => {
+		const content = `
+			[PC:Primus|HIT 3|GRIT 5|WILL 4]
+			[PC:Primus|HIT 0]
+		`;
+		const result = NotationParser.parse(content);
+		expect(result.pcs.get('Primus')?.tags).toEqual([
+			'HIT 0',
+			'GRIT 5',
+			'WILL 4',
+		]);
+	});
+
 	test('parses location tags correctly', () => {
 		const content = '[L:Lighthouse|ruined]';
 		const result = NotationParser.parse(content);
