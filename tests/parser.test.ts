@@ -394,4 +394,14 @@ describe('NotationParser', () => {
 	    expect(item?.properties).toContain('damages undead');
 	    expect(item?.slotParent).toBe('Slot 2');
 	});
+
+	test('[Inv:Slot 2|Shield|cracked] registers Shield with property cracked inside Slot 2', () => {
+	    const content = '[Inv:Slot 2|Shield|cracked]';
+	    const result = NotationParser.parse(content);
+	    const item = result.inventory.get('Shield');
+	    expect(item).toBeDefined();
+	    expect(item?.quantity).toBe('1');
+	    expect(item?.slotParent).toBe('Slot 2');
+	    expect(item?.properties).toContain('cracked');
+	});
 });
