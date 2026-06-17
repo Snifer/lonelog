@@ -491,7 +491,7 @@ export class NotationParser {
 	    lineNum: number
 	): boolean {
 	    const SLOT_CONTENT_SKIP = new Set(["empty", "depleted"]);
-	    const isSlotName = /^.+\s+\d+$/i.test(name) || /^(left|right|main|off)\s+hand$/i.test(name);
+	    const isSlotName = /^.+\s+\d+$/i.test(name);
 
 	    if (!isSlotName || !parts[0]) return false;
 
