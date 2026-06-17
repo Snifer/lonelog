@@ -14,6 +14,7 @@ import { DASHBOARD_VIEW_TYPE, DashboardView } from "ui/dashboard-view";
 import { CombatTrackerView, COMBAT_VIEW_TYPE } from "./ui/combat-view";
 import { DungeonStatusView, DUNGEON_VIEW_TYPE } from "./ui/dungeon-view";
 import { ResourceStatusView, RESOURCE_VIEW_TYPE } from "./ui/resource-view";
+import { PartylogDashboardView, PARTYLOG_DASHBOARD_VIEW_TYPE } from "./ui/partylog-dashboard-view";
 import { lonelogBlockProcessor, lonelogGlobalProcessor } from "./utils/reading-highlighter";
 import { lonelogEditorPlugin } from "./utils/editor-highlighter";
 
@@ -36,6 +37,10 @@ export default class LonelogPlugin extends Plugin {
 		if (this.settings.enableReadingHighlighting) {
 			this.registerMarkdownCodeBlockProcessor(
 				"lonelog",
+				lonelogBlockProcessor(this.app, this.settings)
+			);
+			this.registerMarkdownCodeBlockProcessor(
+				"partylog",
 				lonelogBlockProcessor(this.app, this.settings)
 			);
 
@@ -83,6 +88,10 @@ export default class LonelogPlugin extends Plugin {
 			RESOURCE_VIEW_TYPE,
 			(leaf) => new ResourceStatusView(leaf)
 		);
+		this.registerView(
+			PARTYLOG_DASHBOARD_VIEW_TYPE,
+			(leaf) => new PartylogDashboardView(leaf, this)
+		);
 
 		// Detach all views
 		this.app.workspace.detachLeavesOfType(PROGRESS_VIEW_TYPE);
@@ -92,6 +101,7 @@ export default class LonelogPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(COMBAT_VIEW_TYPE);
 		this.app.workspace.detachLeavesOfType(DUNGEON_VIEW_TYPE);
 		this.app.workspace.detachLeavesOfType(RESOURCE_VIEW_TYPE);
+		this.app.workspace.detachLeavesOfType(PARTYLOG_DASHBOARD_VIEW_TYPE);
 
 		// Register auto-completion
 		this.autoComplete = new LonelogAutoComplete(this.app);
@@ -99,9 +109,11 @@ export default class LonelogPlugin extends Plugin {
 
 		// Add Ribbon Icon for View Selector
 		const ribbonIconEl = this.addRibbonIcon("layout-list", "Lonelog views", (evt: MouseEvent) => {
-			if (this.settings.defaultRibbonView) {
+			const defaultView = this.settings.defaultRibbonView;
+			const partylogDisabled = defaultView === PARTYLOG_DASHBOARD_VIEW_TYPE && !this.settings.enablePartylogAddon;
+			if (defaultView && !partylogDisabled) {
 				// Left click with default set: activate it
-				void this.activateView(this.settings.defaultRibbonView);
+				void this.activateView(defaultView);
 			} else {
 				// No default: show menu
 				this.showViewSelectorMenu(evt);
@@ -515,6 +527,15 @@ export default class LonelogPlugin extends Plugin {
 				this.showViewSelectorMenu(undefined);
 			},
 		});
+
+		this.addCommand({
+			id: "show-partylog-dashboard",
+			name: t("commands.show-partylog-dashboard"),
+			callback: () => {
+				if (!this.settings.enablePartylogAddon) return;
+				void this.activateView(PARTYLOG_DASHBOARD_VIEW_TYPE);
+			},
+		});
 	}
 
 	async activateView(viewType: string) {
@@ -523,7 +544,7 @@ export default class LonelogPlugin extends Plugin {
 		let leaf = workspace.getLeavesOfType(viewType)[0];
 
 		if (!leaf) {
-			if (viewType === DASHBOARD_VIEW_TYPE) {
+			if (viewType === DASHBOARD_VIEW_TYPE || viewType === PARTYLOG_DASHBOARD_VIEW_TYPE) {
 				// Create new leaf in the main workspace (tab)
 				leaf = workspace.getLeaf('tab');
 			} else {
@@ -558,6 +579,14 @@ export default class LonelogPlugin extends Plugin {
 			{ id: DUNGEON_VIEW_TYPE, name: t("views.dungeon-title"), icon: "map" },
 			{ id: RESOURCE_VIEW_TYPE, name: t("views.resources-header"), icon: "coins" },
 		];
+
+		if (this.settings.enablePartylogAddon) {
+			views.push({
+				id: PARTYLOG_DASHBOARD_VIEW_TYPE,
+				name: t("views.partylog-dashboard-title"),
+				icon: "users",
+			});
+		}
 
 		views.forEach((view) => {
 			const isDefault = this.settings.defaultRibbonView === view.id;

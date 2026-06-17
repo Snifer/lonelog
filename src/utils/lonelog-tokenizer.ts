@@ -9,6 +9,7 @@
 
 export type TokenType =
 	| "action"      // @ at line start
+	| "world-event" // ! at line start
 	| "question"    // ? at line start
 	| "dice"        // d: at line start
 	| "consequence" // => at line start
@@ -51,8 +52,9 @@ interface MultilineTagState {
 /** Line-start token patterns (checked in order) */
 const LINE_START_PATTERNS: Array<{ pattern: RegExp; type: Exclude<TokenType, "result" | "tag" | "text"> }> = [
 	{ pattern: /^@(?:\([^)]+\))?/, type: "action" },
+	{ pattern: /^!/, type: "world-event" },
 	{ pattern: /^\?/, type: "question" },
-	{ pattern: /^d:/, type: "dice" },
+	{ pattern: /^d(?:\([^)]+\))?:/, type: "dice" },
 	{ pattern: /^=>/, type: "consequence" },
 	{ pattern: /^tbl:/i, type: "table" },
 	{ pattern: /^gen:/i, type: "generator" },
@@ -71,8 +73,8 @@ const LINE_START_PATTERNS: Array<{ pattern: RegExp; type: Exclude<TokenType, "re
 const RESULT_ARROW_RE = /->/g;
 
 /** Bracket tag pattern — supports multi-line and inline update suffix like [Clock:Name 0/6 ->2/6] or [Track:Name 1.5/10] */
-const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth)):[^\]]*(?:->\s*[\d./]+)?\]/g;
-const MULTILINE_TAG_START_RE = /\[(#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth)):/i;
+const BRACKET_TAG_RE = /\[(?:#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth|Party|Faction|Goal|Quest|Loot|Advance|OOC)):[^\]]*(?:->\s*[\d./]+)?\]/g;
+const MULTILINE_TAG_START_RE = /\[(#?(?:N|L|PC|Thread|E|Clock|Track|Timer|F|R|Inv|Wealth|Party|Faction|Goal|Quest|Loot|Advance|OOC)):/i;
 
 function getTagTokenType(tagText: string): TokenType {
 	if (tagText.startsWith("[F:") || tagText.startsWith("[#F:")) return "foe";
