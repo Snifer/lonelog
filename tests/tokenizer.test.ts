@@ -1,6 +1,11 @@
 import { tokenizeLine, tokenizeLines } from "../src/utils/lonelog-tokenizer";
 
 describe("Tokenizer", () => {
+	test("should tokenize Partylog world events", () => {
+		const tokens = tokenizeLine("! The ceiling begins to crack");
+		expect(tokens[0]?.type).toBe("world-event");
+	});
+
     test("should tokenize table lines", () => {
         const tokens = tokenizeLine("tbl: d100=42 -> Result");
         expect(tokens[0]?.type).toBe("table");
@@ -63,5 +68,36 @@ describe("Tokenizer", () => {
 		expect(tokenLines[1]?.some((token) => token.type === "result")).toBe(true);
 		expect(tokenLines[5]?.[0]?.type).toBe("consequence");
 		expect(tokenLines[5]?.some((token) => token.type === "tag")).toBe(true);
+	});
+
+	test("should tokenize mixed Partylog lines inside a block-like sequence", () => {
+		const tokenLines = tokenizeLines([
+			"@(Kael) Sneak past the guard",
+			"d(Kael): Stealth d20+5=8 vs DC 14 -> Fail",
+			"=> Kicks a bottle. Guard turns!",
+			"! Guard draws his blade and advances",
+		]);
+
+		expect(tokenLines[0]?.[0]?.type).toBe("action");
+		expect(tokenLines[1]?.[0]?.type).toBe("dice");
+		expect(tokenLines[1]?.some((token) => token.type === "result")).toBe(true);
+		expect(tokenLines[2]?.[0]?.type).toBe("consequence");
+		expect(tokenLines[3]?.[0]?.type).toBe("world-event");
+	});
+
+	test("should highlight Partylog-specific bracket tags", () => {
+		const tokenLines = tokenizeLines([
+			"[Party:Gold 150|Rations 10|Wagon:intact]",
+			"[Faction:City Watch|tier:2|standing:neutral]",
+			"[Goal:Escort the Prince to Northport|Active]",
+			"[Quest:The Sunstone Conspiracy|Main]",
+			"[Loot: Ancient Silver Ring | unassigned]",
+			"[Advance:Kael|Rogue 6|+Expertise]",
+			"[OOC: Break | 15 mins]",
+		]);
+
+		tokenLines.forEach((line) => {
+			expect(line[0]?.type).toBe("tag");
+		});
 	});
 });

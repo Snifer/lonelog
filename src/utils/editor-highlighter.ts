@@ -1,6 +1,6 @@
 /**
  * Lonelog Live Editor Highlighting (CodeMirror 6)
- * Highlights Lonelog notation inside ```lonelog code blocks.
+ * Highlights Lonelog notation inside ```lonelog and ```partylog code blocks.
  * Uses shared tokenizer for consistent highlighting across modes.
  */
 
@@ -15,7 +15,7 @@ import { RollManager } from "./roll-manager";
 import { LonelogSettings } from "../settings";
 
 // ---------------------------------------------------------------------------
-// Find lonelog blocks by scanning for fence markers
+// Find notation blocks by scanning for fence markers
 // ---------------------------------------------------------------------------
 
 function findLonelogBlocks(state: EditorState): Array<{ from: number, to: number }> {
@@ -30,7 +30,7 @@ function findLonelogBlocks(state: EditorState): Array<{ from: number, to: number
 		const line = doc.line(lineNum);
 		const text = line.text.trimStart();
 
-		if (!inLonelogBlock && text.startsWith("```lonelog")) {
+		if (!inLonelogBlock && (text.startsWith("```lonelog") || text.startsWith("```partylog"))) {
 			inLonelogBlock = true;
 			blockStart = line.to + 1;
 		} else if (inLonelogBlock && text.startsWith("```")) {

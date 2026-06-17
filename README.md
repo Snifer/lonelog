@@ -1,6 +1,6 @@
 # Lonelog for Obsidian - Solo TTRPG Journaling
 [![Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7C3AED?logo=obsidian)](https://obsidian.md/plugins)
-[![version](https://img.shields.io/badge/version-1.5.7-blue.svg)](https://github.com/snifer/lonelog/releases)
+[![version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/snifer/lonelog/releases)
 [![license](https://img.shields.io/badge/license-0--BSD-green.svg)](LICENSE)
 ![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/lonelog/total?logo)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-ff5f5f?logo=ko-fi&logoColor=white)](https://ko-fi.com/bastiondeldino)
@@ -9,7 +9,7 @@ Lee esto en Castellano: [README-es.md](README-es.md)
 
 ![Lonelog Obsidian Plug-in Logo](./assets/lonelog-obsidian-logo.png)
 
-**Lonelog for Obsidian** streamlines your solo TTRPG journaling by bringing the [Lonelog notation](https://zeruhur.itch.io/lonelog) standard directly into your vault. Focus on the story while keeping mechanics organized, visual, and fast.
+**Lonelog for Obsidian** streamlines your solo and group TTRPG journaling by bringing the [Lonelog notation](https://zeruhur.itch.io/lonelog) standard into your vault and extending it with the Partylog add-on for group-session notes. Focus on the story while keeping mechanics organized, visual, and fast.
 
 ## Main Features
 
@@ -43,6 +43,7 @@ d: 1d6 -> 5
 - **Combat**: rounds, combat blocks, foe tracking
 - **Dungeon crawling**: room state tracking and dungeon status
 - **Resource tracking**: inventory and wealth management
+- **Partylog**: group-session notation using ` ```partylog ` blocks and a dedicated Partylog dashboard
 - **Card drawing** and **advanced dice notation**
 
 ### 5. Other Features
@@ -71,6 +72,36 @@ d: 1d6 -> 5
 2. Press `Ctrl/Cmd + P` to open the command palette.
 3. Type `Lonelog` to see insertion and management commands.
 4. Assign hotkeys in `Settings -> Hotkeys` for faster logging.
+
+### Partylog add-on
+
+Lonelog now includes an optional **Partylog** add-on for group-session notes.
+
+Quick path:
+
+1. Enable **Partylog add-on** in plugin settings.
+2. Write Partylog notation inside fenced `partylog` code blocks.
+3. Open **Partylog Dashboard** from the view selector or command palette.
+
+Example:
+
+````markdown
+```partylog
+@(Kael) Sneak past the guard
+d(Kael): Stealth d20+5=8 vs DC 14 -> Fail
+=> Kicks a bottle. Guard turns!
+! Guard draws his blade and advances
+```
+````
+
+Current Partylog dashboard tabs:
+
+- Overview
+- Scenes
+- Threads
+- Timeline
+- Roster
+- Recap
 
 ## Development
 

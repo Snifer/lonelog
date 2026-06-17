@@ -1,6 +1,6 @@
 # Lonelog para Obsidian - Diario para Solo TTRPG
 [![Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7C3AED?logo=obsidian)](https://obsidian.md/plugins)
-[![version](https://img.shields.io/badge/version-1.5.7-blue.svg)](https://github.com/snifer/lonelog/releases)
+[![version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/snifer/lonelog/releases)
 [![license](https://img.shields.io/badge/license-0--BSD-green.svg)](LICENSE)
 ![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/lonelog/total?logo)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-ff5f5f?logo=ko-fi&logoColor=white)](https://ko-fi.com/bastiondeldino)
@@ -9,7 +9,7 @@ Read this in English: [README.md](README.md)
 
 ![Lonelog Obsidian Plug-in Logo](./assets/lonelog-obsidian-logo.png)
 
-**Lonelog para Obsidian** optimiza el registro de tus partidas de rol en solitario integrando el estándar de [notación Lonelog](https://zeruhur.itch.io/lonelog) directamente en tu bóveda. Así puedes centrarte en la historia mientras mantienes las mecánicas organizadas, visibles y ágiles.
+**Lonelog para Obsidian** optimiza el registro de tus partidas de rol en solitario y en grupo integrando el estándar de [notación Lonelog](https://zeruhur.itch.io/lonelog) en tu bóveda y extendiéndolo con el add-on Partylog para sesiones grupales. Así puedes centrarte en la historia mientras mantienes las mecánicas organizadas, visibles y ágiles.
 
 ## Funcionalidades Principales
 
@@ -43,6 +43,7 @@ d: 1d6 -> 5
 - **Combate**: rondas, bloques de combate y seguimiento de enemigos
 - **Dungeon crawling**: seguimiento de habitaciones y estado de mazmorra
 - **Recursos**: gestión de inventario y riqueza
+- **Partylog**: notación para sesiones grupales usando bloques ` ```partylog ` y un dashboard dedicado de Partylog
 - **Cartas** y **notación avanzada de dados**
 
 ### 5. Otras Características
@@ -71,6 +72,36 @@ Próximamente.
 2. Pulsa `Ctrl/Cmd + P` para abrir la paleta de comandos.
 3. Escribe `Lonelog` para ver los comandos de inserción y gestión.
 4. Asigna atajos en `Configuración -> Atajos de teclado` para registrar más rápido.
+
+### Add-on de Partylog
+
+Lonelog ahora incluye un add-on opcional de **Partylog** para notas de sesiones grupales.
+
+Camino rápido:
+
+1. Activa **Partylog add-on** en la configuración del plugin.
+2. Escribe la notación Partylog dentro de bloques cercados `partylog`.
+3. Abre **Partylog Dashboard** desde el selector de vistas o la paleta de comandos.
+
+Ejemplo:
+
+````markdown
+```partylog
+@(Kael) Sneak past the guard
+d(Kael): Stealth d20+5=8 vs DC 14 -> Fail
+=> Kicks a bottle. Guard turns!
+! Guard draws his blade and advances
+```
+````
+
+Pestañas actuales del dashboard de Partylog:
+
+- Overview
+- Scenes
+- Threads
+- Timeline
+- Roster
+- Recap
 
 ## Desarrollo
 

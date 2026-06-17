@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.6.0]
+
+### New Feature: Partylog Add-on for Group Session Notes
+
+Added the first Partylog release inside the existing Lonelog plugin as an activable add-on for group-session notation, parsing, and dashboard-driven review.
+
+### What Changed
+
+- Added a new **Partylog add-on** toggle in plugin settings.
+- Registered fenced `partylog` code blocks alongside `lonelog` blocks.
+- Added syntax highlighting support for Partylog world events using `!`.
+- Introduced a dedicated `PartylogParser` for extracting timeline, roster, and scene-aware dashboard data from Partylog notes.
+- Added a new **Partylog Dashboard** with internal tabs for:
+  - `Overview`
+  - `Scenes`
+  - `Threads`
+  - `Timeline`
+  - `Roster`
+  - `Recap`
+- Added Partylog-focused test coverage for tokenizer and parser behavior.
+- Documented Partylog activation and usage in both English and Spanish READMEs.
+- Updated plugin metadata and badges to version `1.6.0`.
+- Fixed `version-bump.mjs` so new releases are added to `versions.json` by version key instead of incorrectly checking only `minAppVersion`.
+
+### Release Notes
+
+- This is a **minor release** because it adds a substantial new user-facing feature set rather than a small patch fix.
+- Build and test artifacts should be regenerated in a fully enabled local environment before publishing the release bundle.
+
+---
+
 ## [1.5.7]
 
 ### Inventory Parser Fixes: Bundles, Slot Updates, and Property Mutations

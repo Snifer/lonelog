@@ -44,7 +44,7 @@ describe('DiceRoller', () => {
             highLabel: 'High',
             lowLabel: 'Low',
         });
-        expect(formatted).toBe('d: 4d6=6,5,4,2  (High=6) (Low=2)');
+        expect(formatted).toBe('d: 4d6=6,5,4,2  (High=6) (Low=2) = 17');
     });
 
     test('detail mode hides annotation when label is empty', () => {
@@ -54,14 +54,14 @@ describe('DiceRoller', () => {
             highLabel: '',
             lowLabel: 'Min',
         });
-        expect(noHigh).toBe('d: 2d6=4,3  (Min=3)');
+        expect(noHigh).toBe('d: 2d6=4,3  (Min=3) = 7');
 
         const noLabels = DiceRoller.formatResult('d: 2d6', result, {
             detailMode: true,
             highLabel: '',
             lowLabel: '',
         });
-        expect(noLabels).toBe('d: 2d6=4,3');
+        expect(noLabels).toBe('d: 2d6=4,3 = 7');
     });
 
     test('detail mode replaces existing result', () => {
@@ -71,6 +71,6 @@ describe('DiceRoller', () => {
             highLabel: 'High',
             lowLabel: 'Low',
         });
-        expect(formatted).toBe('d: 2d6=4,3  (High=4) (Low=3)');
+        expect(formatted).toBe('d: 2d6=4,3  (High=4) (Low=3) = 7');
     });
 });

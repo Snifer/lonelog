@@ -498,6 +498,11 @@ If your plugin does not need CSS, delete this file.
 	font-weight: 600;
 }
 
+.ll-world-event {
+	color: var(--ll-tag-color, #c2410c);
+	font-weight: 700;
+}
+
 .ll-question {
 	color: var(--ll-question-color, #8b5cf6);
 	font-weight: 600;
@@ -615,6 +620,10 @@ If your plugin does not need CSS, delete this file.
 	color: var(--ll-action-color, #60a5fa);
 }
 
+.theme-dark .ll-world-event {
+	color: var(--ll-tag-color, #f97316);
+}
+
 .theme-dark .ll-question {
 	color: var(--ll-question-color, #a78bfa);
 }
@@ -676,6 +685,11 @@ If your plugin does not need CSS, delete this file.
 .ll-ed-action {
 	color: var(--ll-action-color, #3b82f6);
 	font-weight: 600;
+}
+
+.ll-ed-world-event {
+	color: var(--ll-tag-color, #c2410c);
+	font-weight: 700;
 }
 
 .ll-ed-question {
@@ -1105,16 +1119,22 @@ If your plugin does not need CSS, delete this file.
 
 /* DASHBOARD STYLES */
 .lonelog-dashboard-container {
-	padding: 2rem;
+	padding: 1.35rem;
 	height: 100%;
 	overflow-y: auto;
 	background-color: var(--background-primary);
 }
 
 .ll-dashboard-header {
-	margin-bottom: 2rem;
+	margin-bottom: 1.25rem;
 	border-bottom: 1px solid var(--background-modifier-border);
-	padding-bottom: 1.5rem;
+	padding-bottom: 1rem;
+}
+
+.lonelog-partylog-dashboard .ll-dashboard-header h1 {
+	margin: 0 0 0.35rem 0;
+	font-size: 1.55rem;
+	line-height: 1.15;
 }
 
 .ll-header-title-row h1 {
@@ -1129,19 +1149,21 @@ If your plugin does not need CSS, delete this file.
 
 .ll-header-stats {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-	gap: 1rem;
+	grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+	gap: 0.75rem;
 }
 
 .ll-stat-card {
 	background-color: var(--background-secondary);
-	padding: 1rem;
+	padding: 0.8rem 0.7rem;
 	border-radius: 8px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	border: 1px solid var(--background-modifier-border);
 	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	min-height: 74px;
+	justify-content: center;
 }
 
 .ll-stat-card:hover {
@@ -1150,22 +1172,25 @@ If your plugin does not need CSS, delete this file.
 }
 
 .ll-stat-value {
-	font-size: 1.8rem;
+	font-size: 1.3rem;
 	font-weight: 700;
 	color: var(--text-accent);
+	line-height: 1.1;
 }
 
 .ll-stat-label {
-	font-size: 0.8rem;
+	font-size: 0.7rem;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	letter-spacing: 0.04em;
 	color: var(--text-muted);
+	text-align: center;
 }
 
 .ll-dashboard-grid {
 	display: grid;
 	grid-template-columns: 1fr 1.5fr;
-	gap: 2rem;
+	gap: 1.1rem;
+	align-items: start;
 }
 
 @media (max-width: 900px) {
@@ -1175,10 +1200,61 @@ If your plugin does not need CSS, delete this file.
 }
 
 .ll-dashboard-section h2 {
-	font-size: 1.2rem;
-	margin-bottom: 1.2rem;
-	border-left: 4px solid var(--text-accent);
-	padding-left: 0.8rem;
+	font-size: 1rem;
+	margin-bottom: 0.9rem;
+	border-left: 3px solid var(--text-accent);
+	padding-left: 0.65rem;
+	line-height: 1.2;
+}
+
+.lonelog-partylog-dashboard .ll-dashboard-section {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 14px;
+	padding: 0.85rem 0.9rem 0.95rem;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.lonelog-partylog-dashboard .ll-dashboard-section + .ll-dashboard-section {
+	margin-top: 1rem;
+}
+
+.lonelog-partylog-dashboard .ll-dashboard-col {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.lonelog-partylog-dashboard .ll-dashboard-section h3 {
+	margin: 0.85rem 0 0.5rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.ll-partylog-warning-banner {
+	border-color: color-mix(in srgb, var(--color-orange, #f59e0b) 55%, var(--background-modifier-border));
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--color-orange, #f59e0b) 8%, transparent), transparent 65%),
+		var(--background-secondary);
+}
+
+.ll-partylog-warning-banner h2 {
+	border-left-color: var(--color-orange, #f59e0b);
+}
+
+.ll-partylog-warning-banner .ll-thread-state {
+	padding: 0.55rem 0.7rem;
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--background-primary) 65%, transparent);
+	border: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+}
+
+.ll-partylog-warning-banner .ll-thread-state + .ll-thread-state {
+	margin-top: 0.6rem;
 }
 
 /* Timeline */
@@ -1319,6 +1395,131 @@ If your plugin does not need CSS, delete this file.
 	margin-right: 0.3rem;
 	display: inline-block;
 	margin-top: 0.4rem;
+}
+
+.lonelog-partylog-dashboard .ll-entity-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	padding: 0.6rem 0.72rem;
+	border-radius: 12px;
+	border: 1px solid transparent;
+	background: color-mix(in srgb, var(--background-primary) 70%, transparent);
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		transform 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+.lonelog-partylog-dashboard .ll-entity-item + .ll-entity-item {
+	margin-top: 0.55rem;
+}
+
+.lonelog-partylog-dashboard .ll-entity-item:hover {
+	background: var(--background-primary-alt);
+	border-color: var(--background-modifier-border-hover);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.lonelog-partylog-dashboard .ll-entity-name {
+	font-weight: 700;
+	line-height: 1.25;
+	font-size: 0.94rem;
+}
+
+.lonelog-partylog-dashboard .ll-thread-state {
+	font-size: 0.82rem;
+	line-height: 1.35;
+	color: var(--text-muted);
+	word-break: break-word;
+}
+
+.lonelog-partylog-dashboard .ll-empty-hint {
+	font-size: 0.82rem;
+	line-height: 1.35;
+}
+
+.lonelog-partylog-dashboard .ll-room-statuses {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-top: 0.25rem;
+}
+
+.lonelog-partylog-dashboard .ll-tag-badge {
+	margin: 0;
+	padding: 0.18rem 0.42rem;
+	border-radius: 999px;
+	background: var(--background-modifier-border-hover);
+	font-size: 0.72rem;
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-session {
+	padding: 0.72rem 0.8rem;
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--background-primary) 72%, transparent);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-session + .lonelog-scene-session {
+	margin-top: 0.85rem;
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-session-header {
+	margin-bottom: 0.75rem;
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-session-btn,
+.lonelog-partylog-dashboard .lonelog-scene-btn {
+	width: 100%;
+	text-align: left;
+	border-radius: 10px;
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-btn {
+	display: flex;
+	flex-direction: row;
+	align-items: baseline;
+	gap: 0.55rem;
+	padding: -0.42rem 0.72rem;
+	background: var(--background-primary);
+	border: 1px solid transparent;
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-btn:hover,
+.lonelog-partylog-dashboard .lonelog-scene-session-btn:hover {
+	border-color: var(--background-modifier-border-hover);
+	background: var(--background-primary-alt);
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.16rem 0.45rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--text-accent) 14%, transparent);
+	font-weight: 700;
+	color: var(--text-accent);
+	font-size: 0.74rem;
+	line-height: 1.15;
+	min-width: 0;
+	white-space: nowrap;
+}
+
+.lonelog-partylog-dashboard .lonelog-scene-context {
+	color: var(--text-muted);
+	line-height: 1.3;
+	font-size: 0.82rem;
+	flex: 1;
 }
 
 .ll-thread-status {
@@ -1841,6 +2042,8 @@ If your plugin does not need CSS, delete this file.
 /* Reduced boldness overrides */
 .ll-reduced-boldness .ll-action,
 .ll-reduced-boldness .ll-ed-action,
+.ll-reduced-boldness .ll-world-event,
+.ll-reduced-boldness .ll-ed-world-event,
 .ll-reduced-boldness .ll-question,
 .ll-reduced-boldness .ll-ed-question,
 .ll-reduced-boldness .ll-dice,

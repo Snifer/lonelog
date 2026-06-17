@@ -32,6 +32,7 @@ export interface LonelogSettings {
 	enableCombatAddon: boolean;
 	enableDungeonAddon: boolean;
 	enableResourceAddon: boolean;
+	enablePartylogAddon: boolean;
 	enableCardAddon: boolean;
 	enableDiceNotationAddon: boolean;
 
@@ -98,6 +99,7 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	enableCombatAddon: false,
 	enableDungeonAddon: false,
 	enableResourceAddon: false,
+	enablePartylogAddon: false,
 	enableCardAddon: false,
 	enableDiceNotationAddon: false,
 
@@ -402,18 +404,23 @@ export class LonelogSettingTab extends PluginSettingTab {
 			.setName(t("settings.default-view"))
 			.setDesc(t("settings.default-view-desc"))
 			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("", t("settings.none"))
-					.addOption("lonelog-dashboard", t("views.dashboard-title"))
-					.addOption("lonelog-progress-view", t("views.progress-title"))
-					.addOption("lonelog-thread-view", t("views.thread-title"))
-					.addOption("lonelog-scene-nav", t("views.scene-title"))
-					.addOption("lonelog-combat-view", t("views.combat-tracker-title"))
-					.setValue(this.plugin.settings.defaultRibbonView)
-					.onChange(async (value) => {
-						this.plugin.settings.defaultRibbonView = value;
-						await this.plugin.saveSettings();
-					})
+				{
+					dropdown
+						.addOption("", t("settings.none"))
+						.addOption("lonelog-dashboard", t("views.dashboard-title"))
+						.addOption("lonelog-progress-view", t("views.progress-title"))
+						.addOption("lonelog-thread-view", t("views.thread-title"))
+						.addOption("lonelog-scene-nav", t("views.scene-title"))
+						.addOption("lonelog-combat-view", t("views.combat-tracker-title"))
+						.addOption("lonelog-partylog-dashboard", t("views.partylog-dashboard-title"));
+
+					dropdown
+						.setValue(this.plugin.settings.defaultRibbonView)
+						.onChange(async (value) => {
+							this.plugin.settings.defaultRibbonView = value;
+							await this.plugin.saveSettings();
+						});
+				}
 			);
 
 		const editorSection = this.renderSubsection(containerEl, t("settings.subsection-syntax-editor"));
@@ -756,6 +763,21 @@ export class LonelogSettingTab extends PluginSettingTab {
 	}
 
 	private renderAddonsPanel(containerEl: HTMLElement): void {
+		const partylogSection = this.renderSubsection(containerEl, t("settings.subsection-partylog"));
+		const partylogSetting = new Setting(partylogSection)
+			.setName(t("settings.enable-partylog"))
+			.setDesc(t("settings.enable-partylog-desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enablePartylogAddon)
+					.onChange(async (value) => {
+						this.plugin.settings.enablePartylogAddon = value;
+						await this.plugin.saveSettings();
+						this.render();
+					})
+			);
+		this.addAddonBadge(partylogSetting, this.plugin.settings.enablePartylogAddon);
+
 		const combatSection = this.renderSubsection(containerEl, t("settings.subsection-combat-exploration"));
 		const combatSetting = new Setting(combatSection)
 			.setName(t("settings.enable-combat"))
