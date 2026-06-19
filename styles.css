@@ -1666,6 +1666,45 @@ If your plugin does not need CSS, delete this file.
 	font-family: var(--font-monospace);
 }
 
+.ll-slot-section {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 10px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.ll-slot-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	cursor: pointer;
+}
+
+.ll-slot-header:hover .ll-slot-name {
+	color: var(--text-accent);
+}
+
+.ll-slot-name {
+	font-size: 0.75em;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--text-muted);
+	transition: color 0.15s ease;
+}
+
+.ll-slot-empty {
+	font-size: 0.85em;
+	color: var(--text-faint);
+	font-style: italic;
+	padding: 4px 0;
+}
+
 /* Compound selectors override .ll-room-status and .ll-thread-status base styles — no !important needed */
 .ll-room-status.ll-status-cleared,
 .ll-thread-status.ll-status-cleared {

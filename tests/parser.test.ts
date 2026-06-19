@@ -187,4 +187,221 @@ describe('NotationParser', () => {
 		const dawn = result.progress.find(p => p.name === 'Dawn');
 		expect(dawn?.current).toBe(3);
 	});
+
+	test('[Inv:Torch|3→2] with unicode arrow updates quantity', () => {
+		const content = '[Inv:Torch|3→2]';
+		const result = NotationParser.parse(content);
+		expect(result.inventory.get('Torch')?.quantity).toBe('2');
+	});
+
+	test('[Inv:Torch|3→1] shorthand using unicode arrow', () => {
+		const content = `
+        [Inv:Torch|3]
+        [Inv:Torch|3→1]
+    `;
+		const result = NotationParser.parse(content);
+		expect(result.inventory.get('Torch')?.quantity).toBe('1');
+	});
+
+	// ── Slot/Container-based inventory ──────────────────────────────────────────────────
+	test('slot container registers without quantity', () => {
+		const content = '[Inv:Backpack 1|Torch×6]';
+		const result = NotationParser.parse(content);
+		const slot = result.inventory.get('Backpack 1');
+		expect(slot).toBeDefined();
+		expect(slot?.quantity).toBe('');
+		expect(slot?.slotParent).toBeUndefined();
+	});
+
+	test('slot content registers sub-items with quantity and slotParent', () => {
+		const content = '[Inv:Backpack 1|Torch×6]';
+		const result = NotationParser.parse(content);
+		const torch = result.inventory.get('Torch');
+		expect(torch).toBeDefined();
+		expect(torch?.quantity).toBe('6');
+		expect(torch?.slotParent).toBe('Backpack 1');
+	});
+
+	test('delta on slot sub-item resolves correctly', () => {
+		const content = `
+        [Inv:Backpack 1|Torch×6]
+        [Inv:Torch-1]
+    `;
+		const result = NotationParser.parse(content);
+		expect(result.inventory.get('Torch')?.quantity).toBe('5');
+	});
+
+	test('multiple slots with multiple sub-items', () => {
+		const content = `
+        [Inv:Backpack 1|Torch×6]
+        [Inv:Backpack 2|Iron Spike×12]
+        [Inv:Backpack 3|Iron Rations×7]
+        [Inv:Torch-1]
+    `;
+		const result = NotationParser.parse(content);
+		expect(result.inventory.get('Torch')?.quantity).toBe('5');
+		expect(result.inventory.get('Iron Spike')?.quantity).toBe('12');
+		expect(result.inventory.get('Iron Rations')?.quantity).toBe('7');
+		expect(result.inventory.get('Iron Spike')?.slotParent).toBe('Backpack 2');
+	});
+
+	test('slot multiplier only accepts ×', () => {
+		const content = `
+        [Inv:Slot 1|Arrow x 20]
+        [Inv:Slot 2|Ration X3]
+    `;
+		const result = NotationParser.parse(content);
+		expect(result.inventory.get('Arrow')).toBeUndefined();
+		expect(result.inventory.get('Ration')).toBeUndefined();
+	});
+
+	test('plain quantity tag is not treated as slot content', () => {
+		const content = '[Inv:Adventuring Kit|1|contains: rope]';
+		const result = NotationParser.parse(content);
+		const kit = result.inventory.get('Adventuring Kit');
+		expect(kit?.quantity).toBe('1');
+		expect(kit?.properties).toContain('contains: rope');
+		// Must not create a spurious sub-item entry
+		expect(result.inventory.has('1')).toBe(false);
+	});
+
+	test('[Inv:Slot 1|Short Sword] adds Short Sword with slotParent "Slot 1" and quantity 1', () => {
+		const content = '[Inv:Slot 1|Short Sword]';
+		const result = NotationParser.parse(content);
+		const item = result.inventory.get('Short Sword');
+		expect(item).toBeDefined();
+		expect(item?.quantity).toBe('1');
+		expect(item?.slotParent).toBe('Slot 1');
+	});
+
+	test('[Inv:Skeleton Key|unique] — unique is quantity, not an slot item', () => {
+		const content = '[Inv:Skeleton Key|unique]';
+		const result = NotationParser.parse(content);
+		const item = result.inventory.get('Skeleton Key');
+		expect(item).toBeDefined();
+		expect(item?.quantity).toBe('unique');
+		expect(result.inventory.has('unique')).toBe(false);
+	});
+
+	test('[Inv:Map to the Ruins] appears in inventory Map', () => {
+		const content = '[Inv:Map to the Ruins]';
+		const result = NotationParser.parse(content);
+		expect(result.inventory.has('Map to the Ruins')).toBe(true);
+	});
+
+	test('isSlotName only applies to names like "Word Number"', () => {
+		const content = `
+        [Inv:Skeleton Key|unique]
+        [Inv:Father's Compass|quest]
+        [Inv:Slot 1|Short Sword]
+    `;
+		const result = NotationParser.parse(content);
+		// Skeleton Key & Father's Compass: quantity, not slot containers
+		expect(result.inventory.get('Skeleton Key')?.quantity).toBe('unique');
+		expect(result.inventory.get("Father's Compass")?.quantity).toBe('quest');
+		expect(result.inventory.has('unique')).toBe(false);
+		expect(result.inventory.has('quest')).toBe(false);
+		// Slot 1 is a slot container
+		expect(result.inventory.get('Short Sword')?.slotParent).toBe('Slot 1');
+	});
+
+	test('isContainer is true for slots, false for normal items', () => {
+		const content = `
+        [Inv:Slot 1|Short Sword]
+        [Inv:Backpack 1|Torch×6]
+        [Inv:Map to the Ruins]
+        [Inv:Skeleton Key|unique]
+    	`;
+
+		const result = NotationParser.parse(content);
+		expect(result.inventory.get('Slot 1')?.isContainer).toBe(true);
+		expect(result.inventory.get('Backpack 1')?.isContainer).toBe(true);
+		expect(result.inventory.get('Short Sword')?.isContainer).toBe(false);
+		expect(result.inventory.get('Torch')?.isContainer).toBe(false);
+		expect(result.inventory.get('Map to the Ruins')?.isContainer).toBe(false);
+		expect(result.inventory.get('Skeleton Key')?.isContainer).toBe(false);
+	});
+
+	test('[Inv:Slot 4|empty] is a container without sub-items', () => {
+		const content = '[Inv:Slot 4|empty]';
+		const result = NotationParser.parse(content);
+		const slot = result.inventory.get('Slot 4');
+		expect(slot?.isContainer).toBe(true);
+		expect(result.inventory.has('empty')).toBe(false);
+	});
+
+	// ── Slot/Container item mutation ─────────────────────────────────────────
+	test('[Inv:Backpack 1|+Pickaxe] adds Pickaxe to container without prefix', () => {
+		const content = `
+        [Inv:Backpack 1|Torch×6]
+        [Inv:Backpack 1|+Pickaxe]
+    `;
+		const result = NotationParser.parse(content);
+		expect(result.inventory.has('Pickaxe')).toBe(true);
+		expect(result.inventory.get('Pickaxe')?.slotParent).toBe('Backpack 1');
+		expect(result.inventory.get('Pickaxe')?.quantity).toBe('1');
+		expect(result.inventory.has('+Pickaxe')).toBe(false);
+	});
+
+	test('[Inv:Backpack 1|-Pickaxe] removes Pickaxe from container', () => {
+		const content = `
+        [Inv:Backpack 1|Torch×6]
+        [Inv:Backpack 1|Pickaxe]
+        [Inv:Backpack 1|-Pickaxe]
+    `;
+		const result = NotationParser.parse(content);
+		expect(result.inventory.has('Pickaxe')).toBe(false);
+	});
+
+	test('[Inv:Backpack 1|Pickaxe->Shovel] replaces Pickaxe with Shovel in container', () => {
+		const content = `
+        [Inv:Backpack 1|Pickaxe]
+        [Inv:Backpack 1|Pickaxe->Shovel]
+    `;
+		const result = NotationParser.parse(content);
+		expect(result.inventory.has('Shovel')).toBe(true);
+		expect(result.inventory.get('Shovel')?.slotParent).toBe('Backpack 1');
+		expect(result.inventory.has('Pickaxe')).toBe(false);
+	});
+
+	test('[Inv:Backpack 1|Shovel→Lantern] replaces Shovel with Lantern using unicode arrow', () => {
+	    const content = `
+	        [Inv:Backpack 1|Shovel]
+	        [Inv:Backpack 1|Shovel→Lantern]
+	    `;
+	    const result = NotationParser.parse(content);
+	    expect(result.inventory.has('Lantern')).toBe(true);
+	    expect(result.inventory.get('Lantern')?.slotParent).toBe('Backpack 1');
+	    expect(result.inventory.has('Shovel')).toBe(false);
+	});
+
+	test('[Inv:Slot 2|Potion×4|d4] registers Potion with quantity 4 and property d4', () => {
+	    const content = '[Inv:Slot 2|Potion×4|d4]';
+	    const result = NotationParser.parse(content);
+	    const item = result.inventory.get('Potion');
+	    expect(item?.quantity).toBe('4');
+	    expect(item?.properties).toContain('d4');
+	    expect(item?.slotParent).toBe('Slot 2');
+	});
+
+	test('[Inv:Slot 2|Potion×4|d4|great|damages undead] registers Potion with all properties', () => {
+	    const content = '[Inv:Slot 2|Potion×4|d4|great|damages undead]';
+	    const result = NotationParser.parse(content);
+	    const item = result.inventory.get('Potion');
+	    expect(item?.quantity).toBe('4');
+	    expect(item?.properties).toContain('d4');
+	    expect(item?.properties).toContain('great');
+	    expect(item?.properties).toContain('damages undead');
+	    expect(item?.slotParent).toBe('Slot 2');
+	});
+
+	test('[Inv:Slot 2|Shield|cracked] registers Shield with property cracked inside Slot 2', () => {
+	    const content = '[Inv:Slot 2|Shield|cracked]';
+	    const result = NotationParser.parse(content);
+	    const item = result.inventory.get('Shield');
+	    expect(item).toBeDefined();
+	    expect(item?.quantity).toBe('1');
+	    expect(item?.slotParent).toBe('Slot 2');
+	    expect(item?.properties).toContain('cracked');
+	});
 });
