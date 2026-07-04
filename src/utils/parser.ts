@@ -51,6 +51,8 @@ export interface ParsedItem {
 	mentions: number[];
 	firstMention: number;
 	lastMention: number;
+	slotParent?: string;
+    isContainer: boolean;
 }
 
 export interface ParsedWealth {
@@ -403,12 +405,14 @@ export class NotationParser {
 			}
 
 			const parts = detailsPart.split("|").map(p => p.trim());
+			const lineNum = this.getLineNumber(content, match.index);
+
+			if (this.parseInventorySlot(inventory, name, parts, lineNum)) continue;
+
 			if (parts[0] && !deltaMatch) {
-				quantity = parts[0];
+				quantity = parts[0].replace(/→/g, "->");;
 			}
 			const properties = parts.slice(1).filter(p => p);
-
-			const lineNum = this.getLineNumber(content, match.index);
 
 			if (quantity.match(/^[+-]\d+$/)) {
 				const handled = this.applyInventoryDelta(inventory, name, parseInt(quantity), lineNum);
@@ -459,12 +463,153 @@ export class NotationParser {
 					properties,
 					mentions: [lineNum],
 					firstMention: lineNum,
-					lastMention: lineNum
+					lastMention: lineNum,
+					isContainer: false
 				});
 			}
 		}
 
 		return inventory;
+	}
+
+	/**
+	 * Handle slot-based inventory notation.
+	 * Returns true if the tag was handled as a slot, false otherwise.
+	 *
+	 * Supports:
+	 *   [Inv:Backpack 1|Torch×6]        — container with multiplier sub-items
+	 *   [Inv:Slot 1|Short Sword]         — container with unique item
+	 *   [Inv:Slot 4|empty]               — explicit empty container
+	 *   [Inv:Backpack 1|+Pickaxe]        — add item to container
+	 *   [Inv:Backpack 1|-Pickaxe]        — remove item from container
+	 *   [Inv:Backpack 1|Pickaxe->Shovel] — replace item in container
+	 */
+	private static parseInventorySlot(
+	    inventory: Map<string, ParsedItem>,
+	    name: string,
+	    parts: string[],
+	    lineNum: number
+	): boolean {
+	    const SLOT_CONTENT_SKIP = new Set(["empty", "depleted"]);
+	    const isSlotName = /^.+\s+\d+$/i.test(name);
+
+	    if (!isSlotName || !parts[0]) return false;
+
+	    const slotMultiplierRe = /^[A-Za-z].+?\s*×\s*\d+/;
+	    const isSlotMultiplier = slotMultiplierRe.test(parts[0]);
+
+	    const isSlotUnique =
+	        !isSlotMultiplier &&
+	        !parts[0].match(/^\d/) &&
+	        !parts[0].startsWith("+") &&
+	        !parts[0].startsWith("-") &&
+	        !parts[0].includes("->") &&
+	        !parts[0].includes("→") &&
+	        !SLOT_CONTENT_SKIP.has(parts[0].toLowerCase());
+
+	    const isSlotMutation =
+	        !isSlotMultiplier &&
+	        !isSlotUnique &&
+	        !parts[0].match(/^\d/) &&
+	        !SLOT_CONTENT_SKIP.has(parts[0].toLowerCase());
+
+	    if (isSlotMultiplier) {
+	        this.upsertSlotContainer(inventory, name, parts.slice(1), lineNum);
+	        const subItemRe = /([^,×]+?)\s*×\s*(\d+)/g;
+	        let sub;
+	        while ((sub = subItemRe.exec(parts[0])) !== null) {
+				if (!sub[1] || !sub[2]) continue;
+	            const subName = sub[1].trim();
+	            const subQty = sub[2];
+	            if (inventory.has(subName)) {
+	                const existing = inventory.get(subName)!;
+	                existing.mentions.push(lineNum);
+	                existing.lastMention = lineNum;
+	                existing.quantity = subQty;
+	            } else {
+	                inventory.set(subName, {
+	                    name: subName, quantity: subQty, properties: parts.slice(1).filter(p => p),
+	                    mentions: [lineNum], firstMention: lineNum, lastMention: lineNum,
+	                    slotParent: name, isContainer: false,
+	                });
+	            }
+	        }
+	        return true;
+	    }
+
+	    if (isSlotUnique) {
+	        this.upsertSlotContainer(inventory, name, [], lineNum);
+	        const itemName = parts[0];
+	        const itemProps = parts.slice(1).filter(p => p);
+	        if (!inventory.has(itemName)) {
+	            inventory.set(itemName, {
+	                name: itemName, quantity: "1", properties: itemProps,
+	                mentions: [lineNum], firstMention: lineNum, lastMention: lineNum,
+	                slotParent: name, isContainer: false,
+	            });
+	        } else {
+	            const existing = inventory.get(itemName)!;
+	            existing.mentions.push(lineNum);
+	            existing.lastMention = lineNum;
+	        }
+	        return true;
+	    }
+
+	    if (SLOT_CONTENT_SKIP.has(parts[0].toLowerCase())) {
+	        this.upsertSlotContainer(inventory, name, [], lineNum);
+	        return true;
+	    }
+
+	    if (isSlotMutation) {
+	        const mutation = parts[0];
+	        if (mutation.startsWith("+")) {
+	            const itemName = mutation.slice(1).trim();
+	            if (!inventory.has(itemName)) {
+	                inventory.set(itemName, {
+	                    name: itemName, quantity: "1", properties: parts.slice(1).filter(p => p),
+	                    mentions: [lineNum], firstMention: lineNum, lastMention: lineNum,
+	                    slotParent: name, isContainer: false,
+	                });
+	            }
+	        } else if (mutation.startsWith("-")) {
+	            const itemName = mutation.slice(1).trim();
+	            inventory.delete(itemName);
+	        } else if (mutation.includes("->") || mutation.includes("→")) {
+	            const [from, to] = mutation.replace(/→/g, "->").split("->").map(s => s.trim());
+	            if (from && to && inventory.has(from)) {
+	                const existing = inventory.get(from)!;
+	                inventory.delete(from);
+	                inventory.set(to, {
+	                    ...existing,
+	                    name: to,
+	                    mentions: [...existing.mentions, lineNum],
+	                    lastMention: lineNum,
+	                });
+	            }
+	        }
+	        return true;
+	    }
+
+	    return false;
+	}
+
+	private static upsertSlotContainer(
+	    inventory: Map<string, ParsedItem>,
+	    name: string,
+	    properties: string[],
+	    lineNum: number
+	): void {
+	    if (!inventory.has(name)) {
+	        inventory.set(name, {
+	            name, quantity: "", properties,
+	            mentions: [lineNum], firstMention: lineNum, lastMention: lineNum,
+	            isContainer: true,
+	        });
+	    } else {
+	        const existing = inventory.get(name)!;
+	        existing.mentions.push(lineNum);
+	        existing.lastMention = lineNum;
+	    }
 	}
 
 	private static applyInventoryDelta(
