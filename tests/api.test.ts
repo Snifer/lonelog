@@ -865,7 +865,7 @@ describe("Lonelog public API", () => {
 			manifest: {
 				id: "lonelog",
 				name: "Lonelog",
-				version: "1.6.1",
+				version: "1.6.2",
 				minAppVersion: "1.12.7",
 			},
 			settings: { enablePartylogAddon: true } as never,
@@ -876,7 +876,7 @@ describe("Lonelog public API", () => {
 		expect(api.info.get()).toEqual({
 			id: "lonelog",
 			name: "Lonelog",
-			version: "1.6.1",
+			version: "1.6.2",
 			minAppVersion: "1.12.7",
 			apiVersion: "1",
 		});
@@ -908,7 +908,7 @@ describe("Lonelog public API", () => {
 			manifest: {
 				id: "lonelog",
 				name: "Lonelog",
-				version: "1.6.1",
+				version: "1.6.2",
 				minAppVersion: "1.12.7",
 			},
 			settings: { enablePartylogAddon: true, locale: "en" } as never,

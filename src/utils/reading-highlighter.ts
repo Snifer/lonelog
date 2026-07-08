@@ -12,6 +12,10 @@ import { TableResolver } from "./table-resolver";
 import { RollManager } from "./roll-manager";
 import { LonelogSettings } from "../settings";
 
+function asString(value: unknown): string {
+	return typeof value === "string" ? value : typeof value === "number" || typeof value === "boolean" ? String(value) : "";
+}
+
 /**
  * Renders a single line of Lonelog notation into a target element.
  * Adds interactive dice buttons if enabled.
@@ -41,7 +45,7 @@ function renderLine(
 	}
 
 	// Add 🎲 button if it's a rollable line (d:, ?, tbl:, or gen:)
-	const trimmedLine = rawLine.trimStart().toLowerCase();
+	const trimmedLine = asString(rawLine).trimStart().toLowerCase();
 	const isIndented = rawLine.startsWith(" ") || rawLine.startsWith("\t");
 	
 	if (
@@ -70,13 +74,13 @@ function renderLine(
 				// absoluteLineNum: section start + offset + current line within the block
 				const absoluteLineNum = section.lineStart + lineIndexInBlock;
 
-				const content = await app.vault.read(file);
+					const content = asString(await app.vault.read(file));
 				const docLines = content.split("\n");
 				const rawLineAtRoll = docLines[absoluteLineNum];
 				if (rawLineAtRoll === undefined) return;
 
 				const tables = TableResolver.parseTables(content);
-				const isGenHeader = rawLineAtRoll.trimStart().toLowerCase().startsWith("gen:");
+					const isGenHeader = asString(rawLineAtRoll).trimStart().toLowerCase().startsWith("gen:");
 				
 				const lineChanges = new Map<number, string>();
 
@@ -230,7 +234,7 @@ function processTarget(
 	ctx: MarkdownPostProcessorContext
 ): void {
 	// Only process if the text content starts with a Lonelog symbol or contains inline tags
-	const text = target.innerText;
+	const text = typeof target.innerText === "string" ? target.innerText : target.textContent ?? "";
 	const trimmed = text.trimStart();
 	
 	// Fast check: does it look like Lonelog?

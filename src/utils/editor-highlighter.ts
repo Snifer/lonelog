@@ -14,6 +14,10 @@ import { TableResolver } from "./table-resolver";
 import { RollManager } from "./roll-manager";
 import { LonelogSettings } from "../settings";
 
+function asString(value: unknown): string {
+	return typeof value === "string" ? value : typeof value === "number" || typeof value === "boolean" ? String(value) : "";
+}
+
 // ---------------------------------------------------------------------------
 // Find notation blocks by scanning for fence markers
 // ---------------------------------------------------------------------------
@@ -28,7 +32,7 @@ function findLonelogBlocks(state: EditorState): Array<{ from: number, to: number
 	// but for typical notes, scanning line prefixes is fast.
 	for (let lineNum = 1; lineNum <= doc.lines; lineNum++) {
 		const line = doc.line(lineNum);
-		const text = line.text.trimStart();
+		const text = asString(line.text).trimStart();
 
 		if (!inLonelogBlock && (text.startsWith("```lonelog") || text.startsWith("```partylog"))) {
 			inLonelogBlock = true;
@@ -86,11 +90,11 @@ class DiceWidget extends WidgetType {
 		const pos = view.posAtDOM(element);
 		if (pos === null) return;
 		const line = view.state.doc.lineAt(pos);
-		const lineText = line.text;
+		const lineText = asString(line.text);
 		
 		// 1. Detection: Are we on a gen: header?
 		const isGenHeader = lineText.trimStart().toLowerCase().startsWith("gen:");
-		const fullContent = view.state.doc.toString();
+		const fullContent = asString(view.state.doc.toString());
 		const tables = TableResolver.parseTables(fullContent);
 
 		if (isGenHeader) {
@@ -98,7 +102,7 @@ class DiceWidget extends WidgetType {
 			let currentIdx = line.number + 1;
 			while (currentIdx <= view.state.doc.lines) {
 				const nextLine = view.state.doc.line(currentIdx);
-				const nextLineText = nextLine.text;
+					const nextLineText = asString(nextLine.text);
 				
 				if (nextLineText.startsWith(" ") || nextLineText.startsWith("\t")) {
 					const newLineText = RollManager.processLine(nextLineText, this.settings, tables);
@@ -277,7 +281,7 @@ function processLineDecorations(
 	}
 
 	// Check for rollable line (d:, ?, tbl:, or gen:)
-	const trimmedLine = lineText.trimStart().toLowerCase();
+	const trimmedLine = asString(lineText).trimStart().toLowerCase();
 	if (
 		settings.enableDiceRoller &&
 		(trimmedLine.startsWith("d:") ||

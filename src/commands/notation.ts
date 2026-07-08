@@ -248,9 +248,9 @@ export class NotationCommands {
 	static rollDiceOnLine(editor: Editor, settings: LonelogSettings): void {
 		const cursor = editor.getCursor();
 		const lineNum = cursor.line;
-		const lineText = editor.getLine(lineNum);
+		const lineText = String(editor.getLine(lineNum) ?? "");
 
-		const fullContent = editor.getValue();
+		const fullContent = String(editor.getValue() ?? "");
 		const tables = TableResolver.parseTables(fullContent);
 
 		// 1. Detection: Are we on a gen: header?

@@ -862,9 +862,10 @@ export class NotationParser {
 	private static formatScaledDecimal(negative: boolean, digits: string, scale: number): string {
 		if (scale === 0) return `${negative ? "-" : ""}${digits}`;
 
-		const paddedDigits = digits.padStart(scale + 1, "0");
+		const normalizedDigitsInput = String(digits);
+		const paddedDigits = normalizedDigitsInput.padStart(scale + 1, "0");
 		const sign = negative && digits !== "0" ? "-" : "";
-		const normalizedDigits = paddedDigits;
+		const normalizedDigits: string = paddedDigits;
 		const integerPart = normalizedDigits.slice(0, -scale) || "0";
 		const fractionalPart = normalizedDigits.slice(-scale).replace(/0+$/, "");
 

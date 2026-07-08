@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.6.2]
+
+### Public API v1 documentation and integration hardening
+
+This patch release refines the first public Lonelog API with stronger external-integration helpers, deeper partial write support in Combat and Partylog, consolidated bilingual API documentation, and lint-safety fixes in the implementation.
+
+### What Changed
+
+- Added unified external integration adapters:
+  - `api.adapters.content(...)`
+  - `api.adapters.file(...)`
+  - `api.adapters.activeFile()`
+- Expanded JSON-friendly normalized outputs across all public gameplay domains so third-party consumers can rely on serializable snapshots consistently.
+- Expanded Combat API with targeted encounter helpers:
+  - `getEncounter(...)`
+  - `getLatestEncounter(...)`
+  - targeted add/update/remove combatant mutations
+  - targeted round advancement and encounter closing helpers
+- Expanded Partylog API with block-targeted and lifecycle-style mutations:
+  - `getLatestBlockIndex(...)`
+  - append entry/tag into a specific Partylog block
+  - upsert helpers for goals, quests, factions, threads, and party resources
+- Added new public mutation events for:
+  - `combat-combatant-updated`
+  - `combat-combatant-removed`
+  - `partylog-tag-mutated`
+- Consolidated API documentation into two primary files:
+  - `lonelog-api.md` (English)
+  - `lonelog-api-es.md` (Spanish)
+- Expanded API documentation with:
+  - real-world integration examples
+  - snippets by consumer plugin type
+  - formal mutation result contract
+  - event payload shapes
+  - clearer support labeling for complete vs partial write modules
+- Added dedicated API changelog files:
+  - `lonelog-api-changelog.md`
+  - `lonelog-api-changelog-es.md`
+- Hardened several implementation boundaries to eliminate unsafe-type lint warnings in API/editor/highlighter/parser-related files.
+
+### Release Notes
+
+- This is a **patch release** because it strengthens the already introduced API surface and its documentation without changing the main end-user workflow.
+- The API remains version `v1`, but its integration story is now significantly clearer and safer for third-party plugin authors.
+
 ## [1.6.1]
 
 ### Public API v1 and Slot-Based Inventory Container Support

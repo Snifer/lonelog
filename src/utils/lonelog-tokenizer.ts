@@ -187,11 +187,11 @@ function buildLineTokens(lineText: string, lineType: TokenType | null, inlineTok
 }
 
 function tokenizeStandaloneLine(lineText: string): Token[] {
-	const trimmed = lineText.trimStart();
+	const trimmed = String(lineText).trimStart();
 	let lineType: TokenType | null = null;
 
 	for (const { pattern, type } of LINE_START_PATTERNS) {
-		const match = trimmed.match(pattern);
+		const match: RegExpMatchArray | null = trimmed.match(pattern);
 		if (match) {
 			lineType = type;
 			break;

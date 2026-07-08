@@ -941,8 +941,14 @@ function serializeInventoryPropertyTag(input: LonelogApiInventoryPropertyMutatio
 	return `[Inv:${input.name}||${mutations.join("|")}]`;
 }
 
+function currenciesToRecord(currencies: Map<string, string>): Record<string, string> {
+	const entries = Array.from(currencies.entries()).map(([currency, amount]) => [currency, amount] as const);
+	return Object.fromEntries(entries) as Record<string, string>;
+}
+
 function serializeWealthTag(input: LonelogApiWealthTagInput): string {
-	const entries = Object.entries(input.currencies).map(([currency, amount]) => `${currency} ${String(amount)}`);
+	const currencyEntries: Array<[string, string | number]> = Object.entries(input.currencies);
+	const entries = currencyEntries.map(([currency, amount]) => `${currency} ${String(amount)}`);
 	return `[Wealth:${entries.join("|")}]`;
 }
 
@@ -954,7 +960,7 @@ function upsertWealthInContent(content: string, input: LonelogApiWealthCurrencyI
 	nextWealth.set(input.currency, String(input.amount));
 
 	const tag = serializeWealthTag({
-		currencies: Object.fromEntries(nextWealth.entries()),
+		currencies: currenciesToRecord(nextWealth),
 	});
 
 	if (!lastMatch) {
@@ -1245,19 +1251,17 @@ function closeEncounterByIdInContent(content: string, encounterId: string): Lone
 	return insertLineInEncounter(content, encounterId, "[/COMBAT]");
 }
 
-type PartylogBlockMatch = RegExpExecArray & { index: number };
-
-function getPartylogBlocks(content: string): PartylogBlockMatch[] {
+function getPartylogBlocks(content: string): RegExpExecArray[] {
 	const regex = /```partylog\b[\s\S]*?```/g;
-	const matches: PartylogBlockMatch[] = [];
+	const matches: RegExpExecArray[] = [];
 	let match: RegExpExecArray | null;
 	while ((match = regex.exec(content)) !== null) {
-		matches.push(match as PartylogBlockMatch);
+		matches.push(match);
 	}
 	return matches;
 }
 
-function resolvePartylogBlock(content: string, blockIndex?: number): PartylogBlockMatch | null {
+function resolvePartylogBlock(content: string, blockIndex?: number): RegExpExecArray | null {
 	const blocks = getPartylogBlocks(content);
 	if (blocks.length === 0) return null;
 	if (blockIndex === undefined) return blocks[blocks.length - 1] ?? null;

@@ -21,9 +21,9 @@ export class RollManager {
 		const notation = DiceRoller.extractNotation(lineText);
 		if (!notation) return lineText;
 
-		let notationToRoll = notation;
+		let notationToRoll: string = notation;
 		let tableOutcome: string | undefined;
-		const trimmed = lineText.trimStart().toLowerCase();
+		const trimmed = String(lineText).trimStart().toLowerCase();
 
 		// --- Case A: Explicit tbl: roll ---
 		if (trimmed.startsWith("tbl:")) {

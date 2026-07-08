@@ -970,7 +970,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 		if (!ctx) return "#000000";
 
 		ctx.fillStyle = color;
-		const computedColor = ctx.fillStyle;
+		const computedColor = String(ctx.fillStyle);
 
 		// Convert rgb(a) to hex if needed
 		if (computedColor.startsWith("#")) {
@@ -980,9 +980,9 @@ export class LonelogSettingTab extends PluginSettingTab {
 		// Parse rgb/rgba format
 		const rgbMatch = computedColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
 		if (rgbMatch && rgbMatch[1] && rgbMatch[2] && rgbMatch[3]) {
-			const r = parseInt(rgbMatch[1]).toString(16).padStart(2, "0");
-			const g = parseInt(rgbMatch[2]).toString(16).padStart(2, "0");
-			const b = parseInt(rgbMatch[3]).toString(16).padStart(2, "0");
+			const r = Number.parseInt(rgbMatch[1], 10).toString(16).padStart(2, "0");
+			const g = Number.parseInt(rgbMatch[2], 10).toString(16).padStart(2, "0");
+			const b = Number.parseInt(rgbMatch[3], 10).toString(16).padStart(2, "0");
 			return `#${r}${g}${b}`;
 		}
 
