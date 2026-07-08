@@ -1,6 +1,6 @@
 # Lonelog para Obsidian - Diario para Solo TTRPG
 [![Obsidian](https://img.shields.io/badge/Obsidian-Plugin-7C3AED?logo=obsidian)](https://obsidian.md/plugins)
-[![version](https://img.shields.io/badge/version-1.6.0-blue.svg)](https://github.com/snifer/lonelog/releases)
+[![version](https://img.shields.io/badge/version-1.6.1-blue.svg)](https://github.com/snifer/lonelog/releases)
 [![license](https://img.shields.io/badge/license-0--BSD-green.svg)](LICENSE)
 ![GitHub Downloads](https://img.shields.io/github/downloads/Snifer/lonelog/total?logo)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Buy%20me%20a%20coffee-ff5f5f?logo=ko-fi&logoColor=white)](https://ko-fi.com/bastiondeldino)
@@ -50,6 +50,7 @@ d: 1d6 -> 5
 - **Autocompletado** basado en entidades mencionadas anteriormente
 - **Internacionalización** en inglés y español
 - **API pública v1** para interoperabilidad con otros plugins de Obsidian
+- **Salidas JSON-friendly normalizadas** para integraciones externas más consistentes
 
 ## Instalación
 
@@ -150,9 +151,34 @@ await api.views.openDashboard();
 
 Alcance actual de la V1:
 
+- `adapters.content`
+- `adapters.file`
+- `adapters.activeFile`
+- `capabilities.get`
+- `addons.getStatus`
+- `dungeon.*`
+- `resources.*`
+- `combat.*`
+- `progress.*`
+- `partylog.*`
+- `info.get`
+- `info.getModules`
+- `info.getStabilityPolicy`
+- `errors.codes`
+- `errors.isLonelogApiError`
+- `events.on/off/offref`
+- eventos de dominio para mutaciones de progress/resources
+- write helpers para dungeon/partylog
+- mutaciones profundas de inventory + tags estructurados de partylog
+- write api de combat + mutaciones parciales de dungeon
+- helpers puntuales finos
+- salidas normalizadas json-friendly
 - `parse.content`
 - `parse.file`
 - `parse.isLonelogNote`
+- `parse.partylog.content`
+- `parse.partylog.file`
+- `parse.partylog.hasBlocks`
 - `tokenize.line`
 - `tokenize.lines`
 - `settings.get`
@@ -160,7 +186,9 @@ Alcance actual de la V1:
 
 Guía completa:
 
-- [`lonelog-api.md`](./lonelog-api.md)
+- [`lonelog-api.md`](./lonelog-api.md) — English
+- [`lonelog-api-es.md`](./lonelog-api-es.md) — Castellano
+- [`lonelog-api-changelog-es.md`](./lonelog-api-changelog-es.md) — changelog de API
 
 ## Licencia
 

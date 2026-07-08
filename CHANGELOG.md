@@ -9,6 +9,22 @@ This patch release introduces the first public Lonelog API for interoperability 
 ### What Changed
 
 - Added the first **Lonelog Public API v1** exposed through the plugin instance for third-party Obsidian plugin integrations.
+- Expanded the public API with Partylog parsing support, capabilities discovery, and an explicit public error contract for file-based operations.
+- Added public API metadata (`info.get`) and reactive hooks/events for settings changes, note changes, and opened Lonelog views.
+- Added dedicated add-on API modules for Dungeon, Resources, Combat, Progress, and Partylog, plus add-on status discovery through `addons.getStatus()`.
+- Added the first public write layer for the API with serializer and mutation helpers for Progress and Resources, plus a dedicated write/mutation integration guide.
+- Added domain mutation events for Progress and Resources, plus serializable list/get helpers for Dungeon, Resources, Combat, and Progress.
+- Added module-level API metadata and a public stability/deprecation policy so integrators can reason about compatibility over time.
+- Extended the write API to Dungeon and Partylog with room upserts, Partylog entry append helpers, and matching domain events.
+- Expanded Resources with deeper inventory mutations (set, delta, property updates, slot moves) and expanded Partylog with structured tag write helpers plus new domain events.
+- Added a first official Combat write API (create encounter, add combatant, advance round, close encounter) and expanded Dungeon with partial room mutation helpers for statuses and exits.
+- Added fine-grained lookup helpers for lightweight integrations: latest room/track plus Partylog open threads, active goals, and party resource access.
+- Added JSON-friendly normalized API outputs for Lonelog, Partylog, Dungeon, Resources, Combat, and Progress so external consumers can rely on consistent array/object snapshots instead of mixed Maps and richer native structures.
+- Added `api.adapters.content/file/activeFile` as a unified integration layer for external plugins that want a single snapshot instead of orchestrating multiple API calls manually.
+- Consolidated API documentation into `lonelog-api.md` (English) and `lonelog-api-es.md` (Spanish), including a formal support policy for full vs partial write API modules and next-version expectations.
+- Expanded Combat write support with targeted encounter helpers (`getEncounter`, `getLatestEncounter`, targeted add/advance/close, combatant update/remove) and new combat mutation events.
+- Expanded Partylog write support with block-targeted append helpers plus structured upserts for goals, quests, factions, party resources, and threads, together with a new mutation event for lifecycle-style updates.
+- Expanded the API guides with real-world integration examples and consumer-plugin snippets, and added dedicated API changelog files for English and Spanish.
 - Added public API methods for:
   - `parse.content`
   - `parse.file`

@@ -23,12 +23,15 @@ export default class LonelogPlugin extends Plugin {
 	settings: LonelogSettings;
 	autoComplete: LonelogAutoComplete;
 	api!: LonelogApi;
+	private apiInternal!: ReturnType<typeof createLonelogApi>["internal"];
 
 	async onload() {
 		console.debug("Loading Lonelog plugin");
 
 		await this.loadSettings();
-		this.api = createLonelogApi(this);
+		const apiBundle = createLonelogApi(this);
+		this.api = apiBundle.api;
+		this.apiInternal = apiBundle.internal;
 
 		// Set locale from settings
 		setLocale(this.settings.locale || "en");
@@ -131,6 +134,10 @@ export default class LonelogPlugin extends Plugin {
 		// Handle frontmatter updates on file modification
 		this.registerEvent(
 			this.app.vault.on("modify", async (file) => {
+				if (file instanceof TFile) {
+					void this.apiInternal.emitNoteChanged(file);
+				}
+
 				if (!this.settings.autoUpdateLastUpdate) return;
 
 				// Ensure it's a markdown file
@@ -186,6 +193,7 @@ export default class LonelogPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		this.apiInternal.emitSettingsChanged();
 	}
 
 	registerCommands(): void {
@@ -565,6 +573,7 @@ export default class LonelogPlugin extends Plugin {
 
 		// Reveal the leaf
 		void workspace.revealLeaf(leaf);
+		this.apiInternal.emitViewOpened(viewType);
 	}
 
 	/**
