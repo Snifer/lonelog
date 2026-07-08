@@ -17,15 +17,18 @@ import { ResourceStatusView, RESOURCE_VIEW_TYPE } from "./ui/resource-view";
 import { PartylogDashboardView, PARTYLOG_DASHBOARD_VIEW_TYPE } from "./ui/partylog-dashboard-view";
 import { lonelogBlockProcessor, lonelogGlobalProcessor } from "./utils/reading-highlighter";
 import { lonelogEditorPlugin } from "./utils/editor-highlighter";
+import { createLonelogApi, type LonelogApi } from "./api";
 
 export default class LonelogPlugin extends Plugin {
 	settings: LonelogSettings;
 	autoComplete: LonelogAutoComplete;
+	api!: LonelogApi;
 
 	async onload() {
 		console.debug("Loading Lonelog plugin");
 
 		await this.loadSettings();
+		this.api = createLonelogApi(this);
 
 		// Set locale from settings
 		setLocale(this.settings.locale || "en");

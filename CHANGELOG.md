@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.6.1]
+
+### Public API v1 and Slot-Based Inventory Container Support
+
+This patch release introduces the first public Lonelog API for interoperability with other Obsidian plugins and documents the new integration surface, while also crediting the new slot-based inventory container support feature contribution.
+
+### What Changed
+
+- Added the first **Lonelog Public API v1** exposed through the plugin instance for third-party Obsidian plugin integrations.
+- Added public API methods for:
+  - `parse.content`
+  - `parse.file`
+  - `parse.isLonelogNote`
+  - `tokenize.line`
+  - `tokenize.lines`
+  - `settings.get`
+  - `views.open...`
+- Added dedicated API test coverage to validate the public contract.
+- Added a new `lonelog-api.md` guide with usage examples and integration notes for plugin developers.
+- Updated the English and Spanish READMEs to reference the new public API guide and the v1 contract.
+- Added **[FEAT] Slot-based Inventory container support** by @AntonioMorenoRubio.
+
+### Release Notes
+
+- This is a **patch release** because it adds a first interoperability surface and documentation without changing the main user workflow or introducing a new end-user subsystem.
+- The public API is intentionally small in v1 so future versions can expand safely without exposing unstable internals too early.
+
+---
+
 ## [1.6.0]
 
 ### New Feature: Partylog Add-on for Group Session Notes

@@ -113,14 +113,31 @@ npm run build
 
 ## API Pública
 
-Lonelog expone una API pública inicial para interoperabilidad con otros plugins de Obsidian a través de la instancia del plugin.
+Lonelog expone una API pública v1 para interoperabilidad con otros plugins de Obsidian a través de la instancia del plugin.
 
 Ejemplo:
 
 ```ts
-const lonelogPlugin = app.plugins.plugins["lonelog"] as
-  | { api?: import("./src/api").LonelogApi }
-  | undefined;
+type LonelogApi = {
+  apiVersion: "1";
+  parse: {
+    content(content: string): unknown;
+    file(file: TFile): Promise<unknown>;
+    isLonelogNote(target: TFile | string): Promise<boolean>;
+  };
+  tokenize: {
+    line(line: string): unknown[];
+    lines(lines: string[]): unknown[][];
+  };
+  settings: {
+    get(): Record<string, unknown>;
+  };
+  views: {
+    openDashboard(): Promise<void>;
+  };
+};
+
+const lonelogPlugin = app.plugins.plugins["lonelog"] as { api?: LonelogApi } | undefined;
 
 const api = lonelogPlugin?.api;
 if (!api || api.apiVersion !== "1") return;
@@ -141,9 +158,9 @@ Alcance actual de la V1:
 - `settings.get`
 - `views.open...`
 
-Referencia completa del diseño:
+Guía completa:
 
-- `lonelog-api-design.md`
+- [`lonelog-api.md`](./lonelog-api.md)
 
 ## Licencia
 
