@@ -43,6 +43,9 @@ export class DiceRoller {
 		const original = notation.trim();
 		const clean = original.replace(/\s+/g, "").toLowerCase();
 
+		// Remove context tags [...] before parsing dice to prevent them from interfering
+		const cleanWithoutContext = clean.replace(/\[.*?\]/g, "");
+
 		// Use a unified regex to find dice pools (e.g., 2d6, 4df) or static modifiers (e.g., +5, -2)
 		const tokenRegex = /([+-]?)(?:(\d*)d(\d+|f)|(\d+))/gi;
 
@@ -54,8 +57,8 @@ export class DiceRoller {
 		let foundAny = false;
 
 		// We need to stop parsing dice/mods when we hit a comparison operator
-		const compMatch = /(.+?)(vs|>=|<=|≥|≤)(\d+)/.exec(clean);
-		const expressionPart = (compMatch && compMatch[1]) ? compMatch[1] : clean;
+		const compMatch = /(.+?)(vs|>=|<=|≥|≤)(\d+)/.exec(cleanWithoutContext);
+		const expressionPart = (compMatch && compMatch[1]) ? compMatch[1] : cleanWithoutContext;
 
 		while ((match = tokenRegex.exec(expressionPart)) !== null) {
 			foundAny = true;
@@ -128,14 +131,16 @@ export class DiceRoller {
 	 */
 	static extractNotation(line: string): string | null {
 		// First, try the standard prefixes (anchored to start of line or with space prefix)
-		const dMatch = /^\s*(?:d:|\?|tbl:|gen:)\s*([^->\n]+)/i.exec(line);
+		// Use non-greedy (.*?) followed by optional -> outcome or end of string
+		const dMatch = /^\s*(?:d:|\?|tbl:|gen:)\s*(.*?)(?:\s*->|$)/i.exec(line);
 		let basePart: string | null = null;
 
 		if (dMatch && dMatch[1]) {
 			basePart = dMatch[1].trim();
 		} else {
 			// Look for indented label lines: "  Apariencia: d3"
-			const labelMatch = /^\s*([^:([]+):\s*([^->\n=]+)/.exec(line);
+			// Stop before ->, =, or end of line
+			const labelMatch = /^\s*([^:([]+):\s*(.*?)(?:\s*(?:->|=)|$)/.exec(line);
 			if (labelMatch && labelMatch[1] && labelMatch[2]) {
 				basePart = labelMatch[2].trim();
 			} else {

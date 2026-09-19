@@ -9,8 +9,11 @@ export class AdvancedDiceRoller {
 		const original = notation.trim();
 		const clean = original.replace(/\s+/g, "").toLowerCase();
 
+		// Remove context tags [...] before parsing dice to prevent them from interfering
+		const cleanWithoutContext = clean.replace(/\[.*?\]/g, "");
+
 		// Basic fallback if no advanced features detected
-		if (!clean.match(/[k!d]|cs|cf|min|max|>=|<=|>|</i)) {
+		if (!cleanWithoutContext.match(/[k!d]|cs|cf|min|max|>=|<=|>|</i)) {
 			return DiceRoller.roll(notation);
 		}
 
@@ -26,8 +29,8 @@ export class AdvancedDiceRoller {
 		let total = 0;
 		let totalModifier = 0;
 
-		const compMatch = /(.+?)(vs|>=|<=|≥|≤|>|<|=|!=)(\d+)/.exec(clean);
-		const expressionPart = compMatch && compMatch[1] ? compMatch[1] : clean;
+		const compMatch = /(.+?)(vs|>=|<=|≥|≤|>|<|=|!=)(\d+)/.exec(cleanWithoutContext);
+		const expressionPart = compMatch && compMatch[1] ? compMatch[1] : cleanWithoutContext;
 
 		while ((match = tokenRegex.exec(expressionPart)) !== null) {
 			foundAny = true;

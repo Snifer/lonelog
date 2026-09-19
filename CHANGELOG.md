@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.6.3]
+
+### Bug Fixes
+
+- Fix dice parsing bug where roll modifiers incorrectly matched context tags.
+
 ## [1.6.2]
 
 ### Public API v1 documentation and integration hardening
