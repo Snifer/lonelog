@@ -295,7 +295,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 
 	private renderSidebar(containerEl: HTMLElement): void {
 		containerEl.empty();
-		containerEl.createEl("div", { cls: "lonelog-settings-sidebar-title", text: t("settings.header") });
+		containerEl.createDiv({ cls: "lonelog-settings-sidebar-title", text: t("settings.header") });
 
 		const sections: Array<{ key: SettingsSectionKey; label: string }> = [
 			{ key: "interface", label: t("settings.nav-interface") },
@@ -480,7 +480,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 						this.plugin.settings.enableEditorHighlighting = value;
 						await this.plugin.saveSettings();
 						if (!value) {
-							editorSection.createEl("div", {
+							editorSection.createDiv({
 								text: t("settings.reload-warning"),
 								cls: "setting-item-description mod-warning",
 							});
@@ -964,7 +964,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 		}
 
 		// Try to use the browser to parse color names/other formats
-		const canvas = this.containerEl.ownerDocument.createElement("canvas");
+		const canvas = createEl("canvas");
 		canvas.width = canvas.height = 1;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return "#000000";

@@ -61,7 +61,7 @@ export class ProgressTrackerView extends ItemView {
 		// Get active file
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
-			container.createEl("div", {
+			container.createDiv({
 				text: "No active file",
 				cls: "lonelog-empty-state",
 			});
@@ -80,11 +80,11 @@ export class ProgressTrackerView extends ItemView {
 		this.progressElements = parsed.progress;
 
 		// Render header
-		const header = container.createEl("div", {
+		const header = container.createDiv({
 			cls: "lonelog-progress-header",
 		});
 		header.createEl("h4", { text: "Progress tracker" });
-		header.createEl("span", {
+		header.createSpan({
 			text: `${this.progressElements.length} items`,
 			cls: "lonelog-count",
 		});
@@ -95,7 +95,7 @@ export class ProgressTrackerView extends ItemView {
 		const timers = this.progressElements.filter((p) => p.type === "timer");
 
 		if (this.progressElements.length === 0) {
-			container.createEl("div", {
+			container.createDiv({
 				text: "No progress elements found",
 				cls: "lonelog-empty-state",
 			});
@@ -119,7 +119,7 @@ export class ProgressTrackerView extends ItemView {
 		title: string,
 		items: ParsedProgress[]
 	): void {
-		const section = container.createEl("div", {
+		const section = container.createDiv({
 			cls: "lonelog-progress-section",
 		});
 
@@ -134,12 +134,12 @@ export class ProgressTrackerView extends ItemView {
 		container: HTMLElement,
 		item: ParsedProgress
 	): void {
-		const itemEl = container.createEl("div", {
+		const itemEl = container.createDiv({
 			cls: "lonelog-progress-item",
 		});
 
 		// Name and jump button
-		const nameRow = itemEl.createEl("div", {
+		const nameRow = itemEl.createDiv({
 			cls: "lonelog-progress-name-row",
 		});
 
@@ -152,7 +152,7 @@ export class ProgressTrackerView extends ItemView {
 		});
 
 		// Progress bar and controls
-		const controlsRow = itemEl.createEl("div", {
+		const controlsRow = itemEl.createDiv({
 			cls: "lonelog-progress-controls",
 		});
 
@@ -166,7 +166,7 @@ export class ProgressTrackerView extends ItemView {
 		});
 
 		// Progress display
-		const progressText = controlsRow.createEl("span", {
+		const progressText = controlsRow.createSpan({
 			cls: "lonelog-progress-text",
 		});
 
@@ -177,11 +177,11 @@ export class ProgressTrackerView extends ItemView {
 			progressText.setText(`${currentDisplay}/${maxDisplay}`);
 
 			// Progress bar
-			const progressBar = controlsRow.createEl("div", {
+			const progressBar = controlsRow.createDiv({
 				cls: "lonelog-progress-bar",
 			});
 			const percentage = (item.current / item.max) * 100;
-			const fill = progressBar.createEl("div", {
+			const fill = progressBar.createDiv({
 				cls: "lonelog-progress-fill",
 			});
 			fill.style.width = `${percentage}%`;

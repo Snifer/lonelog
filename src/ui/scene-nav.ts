@@ -61,7 +61,7 @@ export class SceneNavigatorView extends ItemView {
 		// Get active file
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
-			container.createEl("div", {
+			container.createDiv({
 				text: "No active file",
 				cls: "lonelog-empty-state",
 			});
@@ -80,7 +80,7 @@ export class SceneNavigatorView extends ItemView {
 		this.sessions = parsed.sessions;
 
 		// Render header
-		const header = container.createEl("div", {
+		const header = container.createDiv({
 			cls: "lonelog-scene-header",
 		});
 		header.createEl("h4", { text: "Scene navigator" });
@@ -89,14 +89,14 @@ export class SceneNavigatorView extends ItemView {
 			(sum, session) => sum + session.scenes.length,
 			0
 		);
-		header.createEl("span", {
+		header.createSpan({
 			text: `${this.sessions.length} sessions, ${totalScenes} scenes`,
 			cls: "lonelog-count",
 		});
 
 		// Check if empty
 		if (this.sessions.length === 0) {
-			container.createEl("div", {
+			container.createDiv({
 				text: "No sessions found. Use 'insert session header' to create one.",
 				cls: "lonelog-empty-state",
 			});
@@ -110,12 +110,12 @@ export class SceneNavigatorView extends ItemView {
 	}
 
 	private renderSession(container: HTMLElement, session: ParsedSession): void {
-		const sessionEl = container.createEl("div", {
+		const sessionEl = container.createDiv({
 			cls: "lonelog-scene-session",
 		});
 
 		// Session header (clickable)
-		const sessionHeader = sessionEl.createEl("div", {
+		const sessionHeader = sessionEl.createDiv({
 			cls: "lonelog-scene-session-header",
 		});
 
@@ -123,13 +123,13 @@ export class SceneNavigatorView extends ItemView {
 			cls: "lonelog-scene-session-btn",
 		});
 
-		const sessionTitle = sessionBtn.createEl("span", {
+		const sessionTitle = sessionBtn.createSpan({
 			cls: "lonelog-scene-session-title",
 		});
 		sessionTitle.createEl("strong", { text: `Session ${session.number}` });
 
 		if (session.date) {
-			sessionTitle.createEl("span", {
+			sessionTitle.createSpan({
 				text: ` • ${session.date}`,
 				cls: "lonelog-scene-date",
 			});
@@ -140,14 +140,14 @@ export class SceneNavigatorView extends ItemView {
 		});
 
 		// Scene count
-		sessionHeader.createEl("span", {
+		sessionHeader.createSpan({
 			text: `${session.scenes.length} scenes`,
 			cls: "lonelog-scene-count",
 		});
 
 		// Scenes list
 		if (session.scenes.length > 0) {
-			const scenesList = sessionEl.createEl("div", {
+			const scenesList = sessionEl.createDiv({
 				cls: "lonelog-scene-list",
 			});
 
@@ -155,7 +155,7 @@ export class SceneNavigatorView extends ItemView {
 				this.renderScene(scenesList, scene);
 			});
 		} else {
-			sessionEl.createEl("div", {
+			sessionEl.createDiv({
 				text: "No scenes yet",
 				cls: "lonelog-scene-empty",
 			});
@@ -163,7 +163,7 @@ export class SceneNavigatorView extends ItemView {
 	}
 
 	private renderScene(container: HTMLElement, scene: ParsedScene): void {
-		const sceneEl = container.createEl("div", {
+		const sceneEl = container.createDiv({
 			cls: "lonelog-scene-item",
 		});
 
@@ -171,12 +171,12 @@ export class SceneNavigatorView extends ItemView {
 			cls: "lonelog-scene-btn",
 		});
 
-		sceneBtn.createEl("span", {
+		sceneBtn.createSpan({
 			text: scene.number,
 			cls: "lonelog-scene-number",
 		});
 
-		sceneBtn.createEl("span", {
+		sceneBtn.createSpan({
 			text: scene.context,
 			cls: "lonelog-scene-context",
 		});

@@ -67,7 +67,7 @@ export class ThreadBrowserView extends ItemView {
 		// Get active file
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
-			container.createEl("div", {
+			container.createDiv({
 				text: t("views.no-active-file"),
 				cls: "lonelog-empty-state",
 			});
@@ -85,7 +85,7 @@ export class ThreadBrowserView extends ItemView {
 		this.parsedElements = NotationParser.parse(content);
 
 		// Render header
-		const header = container.createEl("div", {
+		const header = container.createDiv({
 			cls: "lonelog-thread-header",
 		});
 		header.createEl("h4", { text: t("views.story-header") });
@@ -96,14 +96,14 @@ export class ThreadBrowserView extends ItemView {
 			this.parsedElements.threads.size +
 			this.parsedElements.pcs.size;
 
-		header.createEl("span", {
+		header.createSpan({
 			text: `${totalCount} ${t("views.items")}`,
 			cls: "lonelog-count",
 		});
 
 		// Check if empty
 		if (totalCount === 0) {
-			container.createEl("div", {
+			container.createDiv({
 				text: t("views.no-story"),
 				cls: "lonelog-empty-state",
 			});
@@ -138,20 +138,20 @@ export class ThreadBrowserView extends ItemView {
 		container: HTMLElement,
 		pcs: Map<string, ParsedEntity>
 	): void {
-		const section = container.createEl("div", {
+		const section = container.createDiv({
 			cls: "lonelog-thread-section",
 		});
 
-		const sectionHeader = section.createEl("div", {
+		const sectionHeader = section.createDiv({
 			cls: "lonelog-thread-section-header",
 		});
 		sectionHeader.createEl("h5", { text: t("views.pcs") });
-		sectionHeader.createEl("span", {
+		sectionHeader.createSpan({
 			text: `${pcs.size}`,
 			cls: "lonelog-section-count",
 		});
 
-		const list = section.createEl("div", { cls: "lonelog-thread-list" });
+		const list = section.createDiv({ cls: "lonelog-thread-list" });
 
 		Array.from(pcs.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
@@ -164,20 +164,20 @@ export class ThreadBrowserView extends ItemView {
 		container: HTMLElement,
 		npcs: Map<string, ParsedEntity>
 	): void {
-		const section = container.createEl("div", {
+		const section = container.createDiv({
 			cls: "lonelog-thread-section",
 		});
 
-		const sectionHeader = section.createEl("div", {
+		const sectionHeader = section.createDiv({
 			cls: "lonelog-thread-section-header",
 		});
 		sectionHeader.createEl("h5", { text: t("views.npcs") });
-		sectionHeader.createEl("span", {
+		sectionHeader.createSpan({
 			text: `${npcs.size}`,
 			cls: "lonelog-section-count",
 		});
 
-		const list = section.createEl("div", { cls: "lonelog-thread-list" });
+		const list = section.createDiv({ cls: "lonelog-thread-list" });
 
 		Array.from(npcs.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
@@ -190,20 +190,20 @@ export class ThreadBrowserView extends ItemView {
 		container: HTMLElement,
 		locations: Map<string, ParsedEntity>
 	): void {
-		const section = container.createEl("div", {
+		const section = container.createDiv({
 			cls: "lonelog-thread-section",
 		});
 
-		const sectionHeader = section.createEl("div", {
+		const sectionHeader = section.createDiv({
 			cls: "lonelog-thread-section-header",
 		});
 		sectionHeader.createEl("h5", { text: t("views.locations") });
-		sectionHeader.createEl("span", {
+		sectionHeader.createSpan({
 			text: `${locations.size}`,
 			cls: "lonelog-section-count",
 		});
 
-		const list = section.createEl("div", { cls: "lonelog-thread-list" });
+		const list = section.createDiv({ cls: "lonelog-thread-list" });
 
 		Array.from(locations.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
@@ -221,20 +221,20 @@ export class ThreadBrowserView extends ItemView {
 		container: HTMLElement,
 		threads: Map<string, ParsedThread>
 	): void {
-		const section = container.createEl("div", {
+		const section = container.createDiv({
 			cls: "lonelog-thread-section",
 		});
 
-		const sectionHeader = section.createEl("div", {
+		const sectionHeader = section.createDiv({
 			cls: "lonelog-thread-section-header",
 		});
 		sectionHeader.createEl("h5", { text: t("views.threads") });
-		sectionHeader.createEl("span", {
+		sectionHeader.createSpan({
 			text: `${threads.size}`,
 			cls: "lonelog-section-count",
 		});
 
-		const list = section.createEl("div", { cls: "lonelog-thread-list" });
+		const list = section.createDiv({ cls: "lonelog-thread-list" });
 
 		Array.from(threads.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
@@ -254,11 +254,11 @@ export class ThreadBrowserView extends ItemView {
 		tags: string[],
 		mentions: number[]
 	): void {
-		const item = container.createEl("div", {
+		const item = container.createDiv({
 			cls: "lonelog-thread-item",
 		});
 
-		const nameRow = item.createEl("div", {
+		const nameRow = item.createDiv({
 			cls: "lonelog-thread-item-name-row",
 		});
 
@@ -272,13 +272,13 @@ export class ThreadBrowserView extends ItemView {
 			}
 		});
 
-		nameRow.createEl("span", {
+		nameRow.createSpan({
 			text: `×${mentions.length}`,
 			cls: "lonelog-mention-count",
 		});
 
 		if (tags.length > 0) {
-			const tagsEl = item.createEl("div", {
+			const tagsEl = item.createDiv({
 				cls: "lonelog-thread-item-tags",
 			});
 			tagsEl.setText(tags.join(" | "));
@@ -286,7 +286,7 @@ export class ThreadBrowserView extends ItemView {
 
 		// Mention navigation
 		if (mentions.length > 1) {
-			const mentionsNav = item.createEl("div", {
+			const mentionsNav = item.createDiv({
 				cls: "lonelog-mentions-nav",
 			});
 			mentions.forEach((line, index) => {
@@ -323,34 +323,34 @@ export class ThreadBrowserView extends ItemView {
 
 		if (tagMap.size === 0) return;
 
-		const section = container.createEl("div", {
+		const section = container.createDiv({
 			cls: "lonelog-thread-section",
 		});
 
-		const sectionHeader = section.createEl("div", {
+		const sectionHeader = section.createDiv({
 			cls: "lonelog-thread-section-header",
 		});
 		sectionHeader.createEl("h5", { text: t("views.tags") });
-		sectionHeader.createEl("span", {
+		sectionHeader.createSpan({
 			text: `${tagMap.size}`,
 			cls: "lonelog-section-count",
 		});
 
-		const tagCloud = section.createEl("div", { cls: "lonelog-tag-cloud" });
+		const tagCloud = section.createDiv({ cls: "lonelog-tag-cloud" });
 
 		Array.from(tagMap.keys())
 			.sort((a, b) => a.localeCompare(b))
 			.forEach((tagName) => {
-				const tagContainer = tagCloud.createEl("div", {
+				const tagContainer = tagCloud.createDiv({
 					cls: "lonelog-tag-group",
 				});
-				tagContainer.createEl("span", {
+				tagContainer.createSpan({
 					text: tagName,
 					cls: "lonelog-tag-badge",
 				});
 
 				const entities = tagMap.get(tagName)!;
-				const entityList = tagContainer.createEl("div", {
+				const entityList = tagContainer.createDiv({
 					cls: "lonelog-tag-entities",
 				});
 				entities.forEach((entity) => {
@@ -382,11 +382,11 @@ export class ThreadBrowserView extends ItemView {
 		state: string,
 		mentions: number[]
 	): void {
-		const item = container.createEl("div", {
+		const item = container.createDiv({
 			cls: "lonelog-thread-item",
 		});
 
-		const nameRow = item.createEl("div", {
+		const nameRow = item.createDiv({
 			cls: "lonelog-thread-item-name-row",
 		});
 
@@ -400,14 +400,14 @@ export class ThreadBrowserView extends ItemView {
 			}
 		});
 
-		nameRow.createEl("span", {
+		nameRow.createSpan({
 			text: state,
 			cls: `lonelog-thread-state lonelog-thread-state-${state.toLowerCase()}`,
 		});
 
 		// Mention navigation
 		if (mentions.length > 1) {
-			const mentionsNav = item.createEl("div", {
+			const mentionsNav = item.createDiv({
 				cls: "lonelog-mentions-nav",
 			});
 			mentions.forEach((line, index) => {

@@ -65,7 +65,7 @@ export class DashboardView extends ItemView {
 
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
-			container.createEl("div", {
+			container.createDiv({
 				text: t("views.no-active-file"),
 				cls: "lonelog-empty-state",
 			});
@@ -80,14 +80,14 @@ export class DashboardView extends ItemView {
 		this.renderHeader(container, activeFile.basename);
 
 		// --- MAIN GRID ---
-		const grid = container.createEl("div", { cls: "ll-dashboard-grid" });
+		const grid = container.createDiv({ cls: "ll-dashboard-grid" });
 
 		// Left Column: Timeline
-		const leftCol = grid.createEl("div", { cls: "ll-dashboard-col ll-timeline-col" });
+		const leftCol = grid.createDiv({ cls: "ll-dashboard-col ll-timeline-col" });
 		this.renderTimeline(leftCol);
 
 		// Right Column: Elements & Progress
-		const rightCol = grid.createEl("div", { cls: "ll-dashboard-col ll-data-col" });
+		const rightCol = grid.createDiv({ cls: "ll-dashboard-col ll-data-col" });
 		
 		// Progress Section
 		this.renderProgress(rightCol);
@@ -103,11 +103,11 @@ export class DashboardView extends ItemView {
 	}
 
 	private renderHeader(container: HTMLElement, filename: string): void {
-		const header = container.createEl("div", { cls: "ll-dashboard-header" });
-		const titleRow = header.createEl("div", { cls: "ll-header-title-row" });
+		const header = container.createDiv({ cls: "ll-dashboard-header" });
+		const titleRow = header.createDiv({ cls: "ll-header-title-row" });
 		titleRow.createEl("h1", { text: filename });
 		
-		const stats = header.createEl("div", { cls: "ll-header-stats" });
+		const stats = header.createDiv({ cls: "ll-header-stats" });
 		
 		const totalScenes = this.elements?.sessions.reduce((acc, s) => acc + s.scenes.length, 0) || 0;
 		
@@ -119,36 +119,36 @@ export class DashboardView extends ItemView {
 	}
 
 	private createStatCard(container: HTMLElement, label: string, value: string): void {
-		const card = container.createEl("div", { cls: "ll-stat-card" });
-		card.createEl("span", { text: value, cls: "ll-stat-value" });
-		card.createEl("span", { text: label, cls: "ll-stat-label" });
+		const card = container.createDiv({ cls: "ll-stat-card" });
+		card.createSpan({ text: value, cls: "ll-stat-value" });
+		card.createSpan({ text: label, cls: "ll-stat-label" });
 	}
 
 	private renderTimeline(container: HTMLElement): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.scene-nav-header") });
 
 		if (!this.elements || this.elements.sessions.length === 0) {
-			section.createEl("div", { text: t("views.no-sessions"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-sessions"), cls: "ll-empty-hint" });
 			return;
 		}
 
-		const timeline = section.createEl("div", { cls: "ll-timeline-list" });
+		const timeline = section.createDiv({ cls: "ll-timeline-list" });
 		
 		this.elements.sessions.slice().reverse().forEach(session => {
-			const sessionEl = timeline.createEl("div", { cls: "ll-timeline-session" });
-			const sHeader = sessionEl.createEl("div", { cls: "ll-timeline-session-header" });
+			const sessionEl = timeline.createDiv({ cls: "ll-timeline-session" });
+			const sHeader = sessionEl.createDiv({ cls: "ll-timeline-session-header" });
 			
-			sHeader.createEl("span", { text: `Session ${session.number}`, cls: "ll-session-num" });
-			if (session.date) sHeader.createEl("span", { text: session.date, cls: "ll-session-date" });
+			sHeader.createSpan({ text: `Session ${session.number}`, cls: "ll-session-num" });
+			if (session.date) sHeader.createSpan({ text: session.date, cls: "ll-session-date" });
 			
 			sHeader.addEventListener("click", () => this.jumpToLine(session.line));
 
-			const scenesList = sessionEl.createEl("div", { cls: "ll-timeline-scenes" });
+			const scenesList = sessionEl.createDiv({ cls: "ll-timeline-scenes" });
 			session.scenes.forEach(scene => {
-				const sceneEl = scenesList.createEl("div", { cls: "ll-timeline-scene-item" });
-				sceneEl.createEl("span", { text: scene.number, cls: "ll-scene-num-badge" });
-				sceneEl.createEl("span", { text: scene.context, cls: "ll-scene-context-text" });
+				const sceneEl = scenesList.createDiv({ cls: "ll-timeline-scene-item" });
+				sceneEl.createSpan({ text: scene.number, cls: "ll-scene-num-badge" });
+				sceneEl.createSpan({ text: scene.context, cls: "ll-scene-context-text" });
 				
 				sceneEl.addEventListener("click", () => this.jumpToLine(scene.line));
 			});
@@ -156,30 +156,30 @@ export class DashboardView extends ItemView {
 	}
 
 	private renderProgress(container: HTMLElement): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.progress-header") });
 
 		if (!this.elements || this.elements.progress.length === 0) {
-			section.createEl("div", { text: t("views.no-progress"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-progress"), cls: "ll-empty-hint" });
 			return;
 		}
 
-		const grid = section.createEl("div", { cls: "ll-progress-grid" });
+		const grid = section.createDiv({ cls: "ll-progress-grid" });
 
 		this.elements.progress.forEach(item => {
-			const card = grid.createEl("div", { cls: `ll-progress-card ll-type-${item.type}` });
-			card.createEl("div", { text: item.name, cls: "ll-progress-name" });
+			const card = grid.createDiv({ cls: `ll-progress-card ll-type-${item.type}` });
+			card.createDiv({ text: item.name, cls: "ll-progress-name" });
 			
 			if (item.max) {
-				const barContainer = card.createEl("div", { cls: "ll-progress-bar-container" });
+				const barContainer = card.createDiv({ cls: "ll-progress-bar-container" });
 				const percentage = Math.min(100, (item.current / item.max) * 100);
-				barContainer.createEl("div", { 
+				barContainer.createDiv({ 
 					cls: "ll-progress-bar-fill", 
 					attr: { style: `width: ${percentage}%` } 
 				});
-				card.createEl("div", { text: `${item.current} / ${item.max}`, cls: "ll-progress-value" });
+				card.createDiv({ text: `${item.current} / ${item.max}`, cls: "ll-progress-value" });
 			} else {
-				card.createEl("div", { text: item.current.toString(), cls: "ll-progress-value-large" });
+				card.createDiv({ text: item.current.toString(), cls: "ll-progress-value-large" });
 			}
 			
 			card.addEventListener("click", () => this.jumpToLine(item.line));
@@ -188,36 +188,36 @@ export class DashboardView extends ItemView {
 
 	private renderDungeon(container: HTMLElement): void {
 		if (!this.plugin.settings.enableDungeonAddon) return;
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.dungeon-header") });
 
 		if (!this.elements || this.elements.rooms.size === 0) {
-			section.createEl("div", { text: t("views.no-rooms"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-rooms"), cls: "ll-empty-hint" });
 			return;
 		}
 
-		const list = section.createEl("div", { cls: "ll-entity-list" });
+		const list = section.createDiv({ cls: "ll-entity-list" });
 		
 		this.elements.rooms.forEach(room => {
-			const item = list.createEl("div", { cls: "ll-entity-item" });
-			const nameCol = item.createEl("div", { cls: "ll-room-info" });
-			nameCol.createEl("span", { text: `R${room.id}`, cls: "ll-entity-name" });
+			const item = list.createDiv({ cls: "ll-entity-item" });
+			const nameCol = item.createDiv({ cls: "ll-room-info" });
+			nameCol.createSpan({ text: `R${room.id}`, cls: "ll-entity-name" });
 			if (room.description) {
-				nameCol.createEl("span", { text: room.description, cls: "ll-room-desc" });
+				nameCol.createSpan({ text: room.description, cls: "ll-room-desc" });
 			}
 			
-			const statusTags = item.createEl("div", { cls: "ll-room-statuses" });
+			const statusTags = item.createDiv({ cls: "ll-room-statuses" });
 			room.status.forEach(s => {
-				statusTags.createEl("span", { 
+				statusTags.createSpan({ 
 					text: s, 
 					cls: `ll-room-status ll-status-${s.toLowerCase().replace(/\s+/g, "-")}` 
 				});
 			});
 			
 			if (room.exits.length > 0) {
-				const exitsEl = item.createEl("div", { cls: "ll-room-exits" });
-				exitsEl.createEl("span", { text: "Exits: ", cls: "ll-exits-label" });
-				exitsEl.createEl("span", { text: room.exits.join(", "), cls: "ll-exits-list" });
+				const exitsEl = item.createDiv({ cls: "ll-room-exits" });
+				exitsEl.createSpan({ text: "Exits: ", cls: "ll-exits-label" });
+				exitsEl.createSpan({ text: room.exits.join(", "), cls: "ll-exits-list" });
 			}
 
 			item.addEventListener("click", () => this.jumpToLine(room.lastMention));
@@ -233,36 +233,36 @@ export class DashboardView extends ItemView {
 		
 		if (!hasWealth && !hasInv) return;
 
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.resources-header") });
 
 		// Render Wealth
 		if (hasWealth) {
-			const wealthContainer = section.createEl("div", { cls: "ll-wealth-container" });
+			const wealthContainer = section.createDiv({ cls: "ll-wealth-container" });
 			this.elements.wealth.forEach((value, currency) => {
-				const item = wealthContainer.createEl("div", { cls: "ll-wealth-item" });
-				item.createEl("span", { text: currency, cls: "ll-wealth-label" });
-				item.createEl("span", { text: value, cls: "ll-wealth-value" });
+				const item = wealthContainer.createDiv({ cls: "ll-wealth-item" });
+				item.createSpan({ text: currency, cls: "ll-wealth-label" });
+				item.createSpan({ text: value, cls: "ll-wealth-value" });
 			});
 		}
 
 		// Render Inventory
 		if (hasInv) {
-			const grid = section.createEl("div", { cls: "ll-resource-grid" });
+			const grid = section.createDiv({ cls: "ll-resource-grid" });
 			this.elements.inventory.forEach(item => {
-				const card = grid.createEl("div", { cls: "ll-resource-card" });
+				const card = grid.createDiv({ cls: "ll-resource-card" });
 				
-				const main = card.createEl("div", { cls: "ll-resource-main" });
-				const info = main.createEl("div", { cls: "ll-resource-info" });
-				info.createEl("div", { text: item.name, cls: "ll-resource-name" });
+				const main = card.createDiv({ cls: "ll-resource-main" });
+				const info = main.createDiv({ cls: "ll-resource-info" });
+				info.createDiv({ text: item.name, cls: "ll-resource-name" });
 				
 				if (item.properties.length > 0) {
-					const propsEl = info.createEl("div", { cls: "ll-resource-props" });
-					item.properties.forEach(p => propsEl.createEl("span", { text: p }));
+					const propsEl = info.createDiv({ cls: "ll-resource-props" });
+					item.properties.forEach(p => propsEl.createSpan({ text: p }));
 				}
 				
 				if (item.quantity) {
-					const qtyEl = main.createEl("div", { cls: "ll-resource-qty" });
+					const qtyEl = main.createDiv({ cls: "ll-resource-qty" });
 					qtyEl.setText(item.quantity);
 				}
 
@@ -272,34 +272,34 @@ export class DashboardView extends ItemView {
 	}
 
 	private renderEntities(container: HTMLElement): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.story-header") });
 
-		const tabs = section.createEl("div", { cls: "ll-entities-container" });
+		const tabs = section.createDiv({ cls: "ll-entities-container" });
 		
 		// Threads
 		if (this.elements?.threads.size) {
-			const sub = tabs.createEl("div", { cls: "ll-entity-group" });
+			const sub = tabs.createDiv({ cls: "ll-entity-group" });
 			sub.createEl("h3", { text: t("views.threads") });
-			const list = sub.createEl("div", { cls: "ll-entity-list" });
+			const list = sub.createDiv({ cls: "ll-entity-list" });
 			this.elements.threads.forEach(thread => {
-				const item = list.createEl("div", { cls: "ll-entity-item" });
-				item.createEl("span", { text: thread.name, cls: "ll-entity-name" });
-				item.createEl("span", { text: thread.state, cls: `ll-thread-status ll-status-${thread.state.toLowerCase()}` });
+				const item = list.createDiv({ cls: "ll-entity-item" });
+				item.createSpan({ text: thread.name, cls: "ll-entity-name" });
+				item.createSpan({ text: thread.state, cls: `ll-thread-status ll-status-${thread.state.toLowerCase()}` });
 				item.addEventListener("click", () => this.jumpToLine(thread.lastMention));
 			});
 		}
 
 		// NPCs
 		if (this.elements?.npcs.size) {
-			const sub = tabs.createEl("div", { cls: "ll-entity-group" });
+			const sub = tabs.createDiv({ cls: "ll-entity-group" });
 			sub.createEl("h3", { text: t("views.npcs") });
-			const list = sub.createEl("div", { cls: "ll-entity-gallery" });
+			const list = sub.createDiv({ cls: "ll-entity-gallery" });
 			this.elements.npcs.forEach(npc => {
-				const item = list.createEl("div", { cls: "ll-entity-card" });
-				item.createEl("div", { text: npc.name, cls: "ll-entity-name-bold" });
-				const tags = item.createEl("div", { cls: "ll-entity-tags" });
-				npc.tags.forEach(tag => tags.createEl("span", { text: tag, cls: "ll-tag-badge" }));
+				const item = list.createDiv({ cls: "ll-entity-card" });
+				item.createDiv({ text: npc.name, cls: "ll-entity-name-bold" });
+				const tags = item.createDiv({ cls: "ll-entity-tags" });
+				npc.tags.forEach(tag => tags.createSpan({ text: tag, cls: "ll-tag-badge" }));
 				item.addEventListener("click", () => this.jumpToLine(npc.lastMention));
 			});
 		}

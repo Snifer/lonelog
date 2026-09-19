@@ -37,7 +37,7 @@ export class CombatTrackerView extends ItemView {
 		container.empty();
 
 		if (!activeFile || activeFile.extension !== "md") {
-			container.createEl("div", {
+			container.createDiv({
 				text: t("views.no-active-file"),
 				cls: "lonelog-empty-state",
 			});
@@ -49,7 +49,7 @@ export class CombatTrackerView extends ItemView {
 			const elements = NotationParser.parse(content);
 			
 			if (elements.combat.length === 0) {
-				this.contentEl.createEl("div", {
+				this.contentEl.createDiv({
 					text: t("views.no-combat-encounters"),
 					cls: "lonelog-empty-state",
 				});
@@ -69,33 +69,33 @@ export class CombatTrackerView extends ItemView {
 		encounter: ParsedCombatEncounter,
 		file: TFile
 	) {
-		const combatContainer = container.createEl("div", {
+		const combatContainer = container.createDiv({
 			cls: "lonelog-combat-container",
 		});
 
 		// Header
-		const header = combatContainer.createEl("div", {
+		const header = combatContainer.createDiv({
 			cls: "lonelog-combat-header",
 		});
 		
-		const titleRow = header.createEl("div", { cls: "lonelog-combat-title-row" });
+		const titleRow = header.createDiv({ cls: "lonelog-combat-title-row" });
 		titleRow.createEl("h4", { text: t("views.active-combat") });
 		
 		if (encounter.isClosed) {
-			titleRow.createEl("span", { 
+			titleRow.createSpan({ 
 				text: t("views.combat-finished"), 
 				cls: "lonelog-combat-status-finished" 
 			});
 		}
 
-		const roundInfo = header.createEl("div", { cls: "lonelog-combat-round-info" });
-		roundInfo.createEl("span", { 
+		const roundInfo = header.createDiv({ cls: "lonelog-combat-round-info" });
+		roundInfo.createSpan({ 
 			text: `${t("views.round")} ${encounter.currentRound}`,
 			cls: "lonelog-round-badge"
 		});
 
 		// Combatant List
-		const roster = combatContainer.createEl("div", {
+		const roster = combatContainer.createDiv({
 			cls: "lonelog-combat-list",
 		});
 
@@ -119,17 +119,17 @@ export class CombatTrackerView extends ItemView {
 		list: ParsedCombatant[],
 		file: TFile
 	) {
-		const section = parent.createEl("div", { cls: "lonelog-combat-section" });
+		const section = parent.createDiv({ cls: "lonelog-combat-section" });
 		section.createEl("h5", { text: title });
 
-		const listContainer = section.createEl("div", { cls: "lonelog-combatant-list" });
+		const listContainer = section.createDiv({ cls: "lonelog-combatant-list" });
 
 		list.forEach(c => {
-			const item = listContainer.createEl("div", { 
+			const item = listContainer.createDiv({ 
 				cls: `lonelog-combatant-card lonelog-combatant-${c.type}` 
 			});
 
-			const nameRow = item.createEl("div", { cls: "lonelog-combatant-name-row" });
+			const nameRow = item.createDiv({ cls: "lonelog-combatant-name-row" });
 			const nameBtn = nameRow.createEl("button", {
 				text: c.name,
 				cls: "lonelog-combatant-name"
@@ -139,9 +139,9 @@ export class CombatTrackerView extends ItemView {
 				void this.jumpToLine(file, c.line);
 			});
 
-			const statsRow = item.createEl("div", { cls: "lonelog-combatant-stats" });
+			const statsRow = item.createDiv({ cls: "lonelog-combatant-stats" });
 			c.stats.forEach((stat: string) => {
-				statsRow.createEl("span", { text: stat, cls: "lonelog-stat-tag" });
+				statsRow.createSpan({ text: stat, cls: "lonelog-stat-tag" });
 			});
 		});
 	}

@@ -14,12 +14,12 @@ export class DiceAnimator {
 		if (!this.overlay) return;
 		const ownerWindow = this.overlay.ownerDocument.defaultView ?? window;
 
-		const scene = this.overlay.createEl("div", { cls: "lonelog-dice-scene" });
-		const cube = scene.createEl("div", { cls: "lonelog-cube rolling" });
+		const scene = this.overlay.createDiv({ cls: "lonelog-dice-scene" });
+		const cube = scene.createDiv({ cls: "lonelog-cube rolling" });
 
 		// Create faces for 3D look
 		for (let i = 1; i <= 6; i++) {
-			cube.createEl("div", {
+			cube.createDiv({
 				cls: `lonelog-cube-face face-${i}`,
 				text: sides === 6 ? i.toString() : "?"
 			});
@@ -35,7 +35,7 @@ export class DiceAnimator {
 			cube.classList.add(`show-${total}`);
 		} else {
 			// Non-d6 result display
-			this.overlay.createEl("div", {
+			this.overlay.createDiv({
 				cls: "lonelog-dice-result-text",
 				text: total.toString()
 			});
@@ -48,7 +48,7 @@ export class DiceAnimator {
 
 	private createOverlay(): void {
 		if (this.overlay) return;
-		this.overlay = window.activeDocument.body.createEl("div", { cls: "lonelog-dice-overlay" });
+		this.overlay = window.activeDocument.body.createDiv({ cls: "lonelog-dice-overlay" });
 		this.overlay.classList.add("lonelog-hidden");
 		// Force reflow
 		void this.overlay.offsetHeight;

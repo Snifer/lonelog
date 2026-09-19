@@ -45,7 +45,7 @@ export class DungeonStatusView extends ItemView {
 
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
-			container.createEl("div", {
+			container.createDiv({
 				text: t("views.no-active-file"),
 				cls: "lonelog-empty-state",
 			});
@@ -56,23 +56,23 @@ export class DungeonStatusView extends ItemView {
 		const content = await this.app.vault.read(activeFile);
 		this.elements = NotationParser.parse(content);
 
-		const header = container.createEl("div", { cls: "lonelog-thread-header" });
+		const header = container.createDiv({ cls: "lonelog-thread-header" });
 		header.createEl("h4", { text: t("views.dungeon-header") });
 
 		if (!this.elements || this.elements.rooms.size === 0) {
-			container.createEl("div", {
+			container.createDiv({
 				text: t("views.no-rooms"),
 				cls: "lonelog-empty-state",
 			});
 			return;
 		}
 
-		const list = container.createEl("div", { cls: "lonelog-thread-list" });
+		const list = container.createDiv({ cls: "lonelog-thread-list" });
 
 		this.elements.rooms.forEach(room => {
-			const item = list.createEl("div", { cls: "lonelog-thread-item" });
+			const item = list.createDiv({ cls: "lonelog-thread-item" });
 			
-			const nameRow = item.createEl("div", { cls: "lonelog-thread-item-name-row" });
+			const nameRow = item.createDiv({ cls: "lonelog-thread-item-name-row" });
 			const nameBtn = nameRow.createEl("button", { 
 				text: `R${room.id}`, 
 				cls: "lonelog-thread-item-name" 
@@ -80,25 +80,25 @@ export class DungeonStatusView extends ItemView {
 			nameBtn.addEventListener("click", () => this.jumpToLine(room.lastMention));
 
 			if (room.description) {
-				item.createEl("div", { 
+				item.createDiv({ 
 					text: room.description, 
 					cls: "lonelog-thread-item-tags", // Reuse description style
 					attr: { style: "font-style: italic; margin-bottom: 4px;" }
 				});
 			}
 
-			const statusRow = item.createEl("div", { cls: "ll-room-statuses" });
+			const statusRow = item.createDiv({ cls: "ll-room-statuses" });
 			room.status.forEach(s => {
-				statusRow.createEl("span", { 
+				statusRow.createSpan({ 
 					text: s, 
 					cls: `ll-room-status ll-status-${s.toLowerCase().replace(/\s+/g, "-")}` 
 				});
 			});
 
 			if (room.exits.length > 0) {
-				const exitsEl = item.createEl("div", { cls: "ll-room-exits" });
-				exitsEl.createEl("span", { text: "Exits: ", cls: "ll-exits-label" });
-				exitsEl.createEl("span", { text: room.exits.join(", "), cls: "ll-exits-list" });
+				const exitsEl = item.createDiv({ cls: "ll-room-exits" });
+				exitsEl.createSpan({ text: "Exits: ", cls: "ll-exits-label" });
+				exitsEl.createSpan({ text: room.exits.join(", "), cls: "ll-exits-list" });
 			}
 		});
 	}

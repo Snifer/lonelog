@@ -942,8 +942,7 @@ function serializeInventoryPropertyTag(input: LonelogApiInventoryPropertyMutatio
 }
 
 function currenciesToRecord(currencies: Map<string, string>): Record<string, string> {
-	const entries = Array.from(currencies.entries()).map(([currency, amount]) => [currency, amount] as const);
-	return Object.fromEntries(entries) as Record<string, string>;
+	return Object.fromEntries(currencies.entries());
 }
 
 function serializeWealthTag(input: LonelogApiWealthTagInput): string {

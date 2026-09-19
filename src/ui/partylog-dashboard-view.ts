@@ -70,7 +70,7 @@ export class PartylogDashboardView extends ItemView {
 
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
-			container.createEl("div", {
+			container.createDiv({
 				text: t("views.no-active-file"),
 				cls: "lonelog-empty-state",
 			});
@@ -84,7 +84,7 @@ export class PartylogDashboardView extends ItemView {
 		this.renderHeader(container, activeFile.basename, parsed);
 
 		if (!parsed.hasPartylogBlocks) {
-			const empty = container.createEl("div", { cls: "ll-dashboard-section" });
+			const empty = container.createDiv({ cls: "ll-dashboard-section" });
 			empty.createEl("p", { text: t("views.partylog-stage1-empty") });
 			return;
 		}
@@ -93,7 +93,7 @@ export class PartylogDashboardView extends ItemView {
 	}
 
 	private renderHeader(container: HTMLElement, filename: string, parsed: PartylogParsedDocument): void {
-		const header = container.createEl("div", { cls: "ll-dashboard-header" });
+		const header = container.createDiv({ cls: "ll-dashboard-header" });
 		header.createEl("h1", { text: t("views.partylog-dashboard-title") });
 		header.createEl("p", {
 			text: `${t("views.partylog-dashboard-subtitle")} · ${filename}`,
@@ -102,7 +102,7 @@ export class PartylogDashboardView extends ItemView {
 
 		if (!parsed.hasPartylogBlocks) return;
 
-		const stats = header.createEl("div", { cls: "ll-header-stats" });
+		const stats = header.createDiv({ cls: "ll-header-stats" });
 		this.createStatCard(stats, t("views.sessions"), String(parsed.sessions.length));
 		this.createStatCard(stats, t("views.scenes"), String(parsed.sessions.reduce((sum, session) => sum + session.scenes.length, 0)));
 		this.createStatCard(stats, t("views.partylog-stat-actions"), String(parsed.timeline.filter((entry) => entry.type === "action").length));
@@ -115,8 +115,8 @@ export class PartylogDashboardView extends ItemView {
 	}
 
 	private renderTabs(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const tabsShell = container.createEl("div", { cls: "ll-dashboard-section" });
-		const tabBar = tabsShell.createEl("div", { cls: "ll-thread-section-header" });
+		const tabsShell = container.createDiv({ cls: "ll-dashboard-section" });
+		const tabBar = tabsShell.createDiv({ cls: "ll-thread-section-header" });
 
 		const tabs: Array<{ key: PartylogTab; label: string }> = [
 			{ key: "overview", label: t("views.partylog-tab-overview") },
@@ -140,7 +140,7 @@ export class PartylogDashboardView extends ItemView {
 
 		this.renderWarningBanner(container, parsed);
 
-		const body = container.createEl("div", { cls: "ll-dashboard-grid" });
+		const body = container.createDiv({ cls: "ll-dashboard-grid" });
 		switch (this.activeTab) {
 			case "overview":
 				this.renderOverview(body, parsed);
@@ -166,51 +166,51 @@ export class PartylogDashboardView extends ItemView {
 	private renderWarningBanner(container: HTMLElement, parsed: PartylogParsedDocument): void {
 		if (parsed.authorityWarnings.length === 0) return;
 
-		const banner = container.createEl("div", {
+		const banner = container.createDiv({
 			cls: "ll-dashboard-section ll-partylog-warning-banner",
 		});
 		banner.createEl("h2", { text: `⚠ ${t("views.partylog-authority-warnings")}` });
 		parsed.authorityWarnings.forEach((warning) => {
-			const row = banner.createEl("div", { cls: "ll-thread-state" });
+			const row = banner.createDiv({ cls: "ll-thread-state" });
 			row.setText(warning.message);
 			row.addEventListener("click", () => this.jumpToLine(warning.line));
 		});
 	}
 
 	private renderOverview(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const left = container.createEl("div", { cls: "ll-dashboard-col ll-timeline-col" });
-		const right = container.createEl("div", { cls: "ll-dashboard-col ll-data-col" });
+		const left = container.createDiv({ cls: "ll-dashboard-col ll-timeline-col" });
+		const right = container.createDiv({ cls: "ll-dashboard-col ll-data-col" });
 
-		const recent = left.createEl("div", { cls: "ll-dashboard-section" });
+		const recent = left.createDiv({ cls: "ll-dashboard-section" });
 		recent.createEl("h2", { text: t("views.partylog-overview-recent") });
 		const latestEntries = parsed.timeline.slice(-10);
 		if (latestEntries.length === 0) {
-			recent.createEl("div", { text: t("views.partylog-empty-timeline"), cls: "ll-empty-hint" });
+			recent.createDiv({ text: t("views.partylog-empty-timeline"), cls: "ll-empty-hint" });
 		} else {
 			this.renderGroupedTimeline(recent, latestEntries);
 		}
 
-		const dialogueSection = left.createEl("div", { cls: "ll-dashboard-section" });
+		const dialogueSection = left.createDiv({ cls: "ll-dashboard-section" });
 		dialogueSection.createEl("h2", { text: t("views.partylog-dialogue-highlights") });
 		this.renderDialogueSection(dialogueSection, parsed, 5);
 
-		const scenes = right.createEl("div", { cls: "ll-dashboard-section" });
+		const scenes = right.createDiv({ cls: "ll-dashboard-section" });
 		scenes.createEl("h2", { text: t("views.partylog-overview-scenes") });
 		const latestScene = this.getLatestScene(parsed.sessions);
 		if (latestScene) {
-			const row = scenes.createEl("div", { cls: "ll-entity-item" });
-			row.createEl("span", { text: latestScene.number, cls: "ll-entity-name" });
-			row.createEl("span", { text: latestScene.context, cls: "ll-thread-state" });
+			const row = scenes.createDiv({ cls: "ll-entity-item" });
+			row.createSpan({ text: latestScene.number, cls: "ll-entity-name" });
+			row.createSpan({ text: latestScene.context, cls: "ll-thread-state" });
 		} else if (parsed.interludes.length > 0) {
 			const latestInterlude = parsed.interludes[parsed.interludes.length - 1];
 			if (latestInterlude) {
-				scenes.createEl("div", { text: latestInterlude.title, cls: "ll-thread-state" });
+				scenes.createDiv({ text: latestInterlude.title, cls: "ll-thread-state" });
 			}
 		} else {
-			scenes.createEl("div", { text: t("views.no-scenes"), cls: "ll-empty-hint" });
+			scenes.createDiv({ text: t("views.no-scenes"), cls: "ll-empty-hint" });
 		}
 
-		const threads = right.createEl("div", { cls: "ll-dashboard-section" });
+		const threads = right.createDiv({ cls: "ll-dashboard-section" });
 		threads.createEl("h2", { text: t("views.partylog-overview-threads") });
 		const tracked = [
 			...Array.from(parsed.threads.values()).map((item) => `${item.name} — ${item.state}`),
@@ -218,12 +218,12 @@ export class PartylogDashboardView extends ItemView {
 			...Array.from(parsed.quests.values()).map((item) => `${item.name} — ${item.state}`),
 		].slice(0, 8);
 		if (tracked.length === 0) {
-			threads.createEl("div", { text: t("views.no-story"), cls: "ll-empty-hint" });
+			threads.createDiv({ text: t("views.no-story"), cls: "ll-empty-hint" });
 		} else {
-			tracked.forEach((item) => threads.createEl("div", { text: item, cls: "ll-thread-state" }));
+			tracked.forEach((item) => threads.createDiv({ text: item, cls: "ll-thread-state" }));
 		}
 
-		const richContent = right.createEl("div", { cls: "ll-dashboard-section" });
+		const richContent = right.createDiv({ cls: "ll-dashboard-section" });
 		richContent.createEl("h2", { text: t("views.partylog-rich-content") });
 		this.renderMiniMetricList(richContent, [
 			`${t("views.partylog-stat-meta")}: ${parsed.meta.length}`,
@@ -232,68 +232,68 @@ export class PartylogDashboardView extends ItemView {
 			`${t("views.partylog-session-endings")}: ${parsed.sessionEnds.length}`,
 		]);
 
-		const metaPreview = right.createEl("div", { cls: "ll-dashboard-section" });
+		const metaPreview = right.createDiv({ cls: "ll-dashboard-section" });
 		metaPreview.createEl("h2", { text: t("views.partylog-meta-notes") });
 		this.renderMetaSection(metaPreview, parsed, 4);
 
-		const narrativePreview = right.createEl("div", { cls: "ll-dashboard-section" });
+		const narrativePreview = right.createDiv({ cls: "ll-dashboard-section" });
 		narrativePreview.createEl("h2", { text: t("views.partylog-narrative-blocks") });
 		this.renderNarrativeSection(narrativePreview, parsed, 3);
 	}
 
 	private renderScenes(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-col" });
-		const card = section.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-col" });
+		const card = section.createDiv({ cls: "ll-dashboard-section" });
 		card.createEl("h2", { text: t("views.partylog-tab-scenes") });
 
 		if (parsed.sessions.length === 0 && parsed.interludes.length === 0) {
-			card.createEl("div", { text: t("views.no-sessions"), cls: "ll-empty-hint" });
+			card.createDiv({ text: t("views.no-sessions"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		parsed.sessions.forEach((session) => {
-			const sessionEl = card.createEl("div", { cls: "lonelog-scene-session" });
-			const header = sessionEl.createEl("div", { cls: "lonelog-scene-session-header" });
+			const sessionEl = card.createDiv({ cls: "lonelog-scene-session" });
+			const header = sessionEl.createDiv({ cls: "lonelog-scene-session-header" });
 			const btn = header.createEl("button", { cls: "lonelog-scene-session-btn" });
 			btn.createEl("strong", { text: `${t("views.session")} ${session.number}` });
-			if (session.date) btn.createEl("span", { text: ` • ${session.date}`, cls: "lonelog-scene-date" });
+			if (session.date) btn.createSpan({ text: ` • ${session.date}`, cls: "lonelog-scene-date" });
 			btn.addEventListener("click", () => this.jumpToLine(session.line));
-			header.createEl("span", { text: `${session.scenes.length} ${t("views.scenes")}`, cls: "lonelog-scene-count" });
+			header.createSpan({ text: `${session.scenes.length} ${t("views.scenes")}`, cls: "lonelog-scene-count" });
 
-			const scenesList = sessionEl.createEl("div", { cls: "lonelog-scene-list" });
+			const scenesList = sessionEl.createDiv({ cls: "lonelog-scene-list" });
 			session.scenes.forEach((scene) => {
 				const item = scenesList.createEl("button", { cls: "lonelog-scene-btn" });
-				item.createEl("span", { text: scene.number, cls: "lonelog-scene-number" });
-				item.createEl("span", { text: scene.context, cls: "lonelog-scene-context" });
+				item.createSpan({ text: scene.number, cls: "lonelog-scene-number" });
+				item.createSpan({ text: scene.context, cls: "lonelog-scene-context" });
 				item.addEventListener("click", () => this.jumpToLine(scene.line));
 			});
 		});
 
 		if (parsed.interludes.length > 0) {
-			const interludeSection = card.createEl("div", { cls: "lonelog-scene-session" });
+			const interludeSection = card.createDiv({ cls: "lonelog-scene-session" });
 			interludeSection.createEl("h3", { text: t("views.partylog-interludes") });
 			parsed.interludes.forEach((interlude) => {
 				const item = interludeSection.createEl("button", { cls: "lonelog-scene-btn" });
-				item.createEl("span", { text: interlude.title, cls: "lonelog-scene-context" });
+				item.createSpan({ text: interlude.title, cls: "lonelog-scene-context" });
 				item.addEventListener("click", () => this.jumpToLine(interlude.line));
 			});
 		}
 
 		if (parsed.sessionEnds.length > 0) {
-			const endings = card.createEl("div", { cls: "lonelog-scene-session" });
+			const endings = card.createDiv({ cls: "lonelog-scene-session" });
 			endings.createEl("h3", { text: t("views.partylog-session-endings") });
 			parsed.sessionEnds.forEach((entry) => {
 				const row = endings.createEl("button", { cls: "lonelog-scene-btn" });
-				row.createEl("span", { text: `Session ${entry.sessionNumber ?? "?"}`, cls: "lonelog-scene-number" });
-				row.createEl("span", { text: `${entry.advancements.length} advancements · ${entry.hooks.length} hooks`, cls: "lonelog-scene-context" });
+				row.createSpan({ text: `Session ${entry.sessionNumber ?? "?"}`, cls: "lonelog-scene-number" });
+				row.createSpan({ text: `${entry.advancements.length} advancements · ${entry.hooks.length} hooks`, cls: "lonelog-scene-context" });
 				row.addEventListener("click", () => this.jumpToLine(entry.line));
 			});
 		}
 	}
 
 	private renderThreads(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const left = container.createEl("div", { cls: "ll-dashboard-col ll-data-col" });
-		const right = container.createEl("div", { cls: "ll-dashboard-col ll-data-col" });
+		const left = container.createDiv({ cls: "ll-dashboard-col ll-data-col" });
+		const right = container.createDiv({ cls: "ll-dashboard-col ll-data-col" });
 
 		this.renderEntityMapSection(left, t("views.pcs"), parsed.pcs);
 		this.renderEntityMapSection(left, t("views.npcs"), parsed.npcs);
@@ -307,37 +307,37 @@ export class PartylogDashboardView extends ItemView {
 	}
 
 	private renderTimeline(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-col" });
-		const card = section.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-col" });
+		const card = section.createDiv({ cls: "ll-dashboard-section" });
 		card.createEl("h2", { text: t("views.partylog-tab-timeline") });
 
 		if (parsed.timeline.length === 0) {
-			card.createEl("div", { text: t("views.partylog-empty-timeline"), cls: "ll-empty-hint" });
+			card.createDiv({ text: t("views.partylog-empty-timeline"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		this.renderGroupedTimeline(card, parsed.timeline);
 
-		const detailGrid = section.createEl("div", { cls: "ll-dashboard-grid" });
-		const detailLeft = detailGrid.createEl("div", { cls: "ll-dashboard-col ll-data-col" });
-		const detailRight = detailGrid.createEl("div", { cls: "ll-dashboard-col ll-data-col" });
+		const detailGrid = section.createDiv({ cls: "ll-dashboard-grid" });
+		const detailLeft = detailGrid.createDiv({ cls: "ll-dashboard-col ll-data-col" });
+		const detailRight = detailGrid.createDiv({ cls: "ll-dashboard-col ll-data-col" });
 
-		const dialogueCard = detailLeft.createEl("div", { cls: "ll-dashboard-section" });
+		const dialogueCard = detailLeft.createDiv({ cls: "ll-dashboard-section" });
 		dialogueCard.createEl("h2", { text: t("views.partylog-dialogue-stream") });
 		this.renderDialogueSection(dialogueCard, parsed, 10);
 
-		const metaCard = detailRight.createEl("div", { cls: "ll-dashboard-section" });
+		const metaCard = detailRight.createDiv({ cls: "ll-dashboard-section" });
 		metaCard.createEl("h2", { text: t("views.partylog-meta-notes") });
 		this.renderMetaSection(metaCard, parsed, 8);
 
-		const narrativeCard = detailRight.createEl("div", { cls: "ll-dashboard-section" });
+		const narrativeCard = detailRight.createDiv({ cls: "ll-dashboard-section" });
 		narrativeCard.createEl("h2", { text: t("views.partylog-narrative-blocks") });
 		this.renderNarrativeSection(narrativeCard, parsed, 6);
 	}
 
 	private renderRoster(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-col" });
-		const card = section.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-col" });
+		const card = section.createDiv({ cls: "ll-dashboard-section" });
 		card.createEl("h2", { text: t("views.partylog-tab-roster") });
 
 		const roster = Array.from(parsed.roster.values()).sort((a, b) => {
@@ -347,14 +347,14 @@ export class PartylogDashboardView extends ItemView {
 		});
 
 		if (roster.length === 0) {
-			card.createEl("div", { text: t("views.partylog-empty-roster"), cls: "ll-empty-hint" });
+			card.createDiv({ text: t("views.partylog-empty-roster"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		roster.forEach((entry) => {
-			const row = card.createEl("div", { cls: "ll-entity-item" });
-			const info = row.createEl("div");
-			info.createEl("div", { text: entry.name, cls: "ll-entity-name" });
+			const row = card.createDiv({ cls: "ll-entity-item" });
+			const info = row.createDiv();
+			info.createDiv({ text: entry.name, cls: "ll-entity-name" });
 			const meta: string[] = [];
 			const total = entry.actionCount + entry.rollCount + entry.questionCount + entry.dialogueCount;
 			meta.push(`${t("views.partylog-stat-total")}: ${total}`);
@@ -364,17 +364,17 @@ export class PartylogDashboardView extends ItemView {
 			if (entry.dialogueCount > 0) meta.push(`${t("views.partylog-stat-dialogue")}: ${entry.dialogueCount}`);
 			if (entry.lastSceneNumber) meta.push(`${entry.lastSceneNumber}${entry.lastSceneContext ? ` • ${entry.lastSceneContext}` : ""}`);
 			if (!entry.lastSceneNumber && entry.lastInterludeTitle) meta.push(entry.lastInterludeTitle);
-			info.createEl("div", { text: meta.join(" · "), cls: "ll-thread-state" });
+			info.createDiv({ text: meta.join(" · "), cls: "ll-thread-state" });
 		});
 	}
 
 	private renderRecap(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-col" });
-		const card = section.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-col" });
+		const card = section.createDiv({ cls: "ll-dashboard-section" });
 		card.createEl("h2", { text: t("views.partylog-tab-recap") });
 
 		if (parsed.timeline.length === 0) {
-			card.createEl("div", { text: t("views.partylog-empty-recap"), cls: "ll-empty-hint" });
+			card.createDiv({ text: t("views.partylog-empty-recap"), cls: "ll-empty-hint" });
 			return;
 		}
 
@@ -457,107 +457,107 @@ export class PartylogDashboardView extends ItemView {
 	}
 
 	private renderEntityMapSection(container: HTMLElement, title: string, entities: Map<string, ParsedEntity>): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: title });
 
 		if (entities.size === 0) {
-			section.createEl("div", { text: t("views.no-story"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-story"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		Array.from(entities.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
 			.forEach((entity) => {
-				const row = section.createEl("div", { cls: "ll-entity-item" });
-				row.createEl("span", { text: entity.name, cls: "ll-entity-name" });
+				const row = section.createDiv({ cls: "ll-entity-item" });
+				row.createSpan({ text: entity.name, cls: "ll-entity-name" });
 				if (entity.tags.length > 0) {
-					const tags = row.createEl("div", { cls: "ll-room-statuses" });
-					entity.tags.forEach((tag) => tags.createEl("span", { text: tag, cls: "ll-tag-badge" }));
+					const tags = row.createDiv({ cls: "ll-room-statuses" });
+					entity.tags.forEach((tag) => tags.createSpan({ text: tag, cls: "ll-tag-badge" }));
 				}
 			});
 	}
 
 	private renderThreadMapSection(container: HTMLElement, title: string, threads: Map<string, ParsedThread>): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: title });
 
 		if (threads.size === 0) {
-			section.createEl("div", { text: t("views.no-story"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-story"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		Array.from(threads.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
 			.forEach((thread) => {
-				const row = section.createEl("div", { cls: "ll-entity-item" });
-				row.createEl("span", { text: thread.name, cls: "ll-entity-name" });
-				row.createEl("span", { text: thread.state, cls: "ll-thread-state" });
+				const row = section.createDiv({ cls: "ll-entity-item" });
+				row.createSpan({ text: thread.name, cls: "ll-entity-name" });
+				row.createSpan({ text: thread.state, cls: "ll-thread-state" });
 			});
 	}
 
 	private renderPartyResourcesSection(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.partylog-party-resources") });
 		if (parsed.partyResources.size === 0) {
-			section.createEl("div", { text: t("views.no-story"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-story"), cls: "ll-empty-hint" });
 			return;
 		}
 		Array.from(parsed.partyResources.values())
 			.sort((a, b) => a.key.localeCompare(b.key))
 			.forEach((resource) => {
-				const row = section.createEl("div", { cls: "ll-entity-item" });
-				row.createEl("span", { text: resource.key, cls: "ll-entity-name" });
-				row.createEl("span", { text: resource.value, cls: "ll-thread-state" });
+				const row = section.createDiv({ cls: "ll-entity-item" });
+				row.createSpan({ text: resource.key, cls: "ll-entity-name" });
+				row.createSpan({ text: resource.value, cls: "ll-thread-state" });
 			});
 	}
 
 	private renderFactionsSection(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.partylog-factions") });
 		if (parsed.factions.size === 0) {
-			section.createEl("div", { text: t("views.no-story"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-story"), cls: "ll-empty-hint" });
 			return;
 		}
 		Array.from(parsed.factions.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
 			.forEach((faction) => {
-				const row = section.createEl("div", { cls: "ll-entity-item" });
-				row.createEl("span", { text: faction.name, cls: "ll-entity-name" });
+				const row = section.createDiv({ cls: "ll-entity-item" });
+				row.createSpan({ text: faction.name, cls: "ll-entity-name" });
 				const detail = [faction.tier ? `tier:${faction.tier}` : "", faction.standing ? `standing:${faction.standing}` : "", ...faction.tags]
 					.filter(Boolean)
 					.join(" · ");
-				row.createEl("span", { text: detail, cls: "ll-thread-state" });
+				row.createSpan({ text: detail, cls: "ll-thread-state" });
 			});
 	}
 
 	private renderObjectivesSection(container: HTMLElement, title: string, objectives: Map<string, { name: string; state: string }>): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: title });
 		if (objectives.size === 0) {
-			section.createEl("div", { text: t("views.no-story"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-story"), cls: "ll-empty-hint" });
 			return;
 		}
 		Array.from(objectives.values())
 			.sort((a, b) => a.name.localeCompare(b.name))
 			.forEach((objective) => {
-				const row = section.createEl("div", { cls: "ll-entity-item" });
-				row.createEl("span", { text: objective.name, cls: "ll-entity-name" });
-				row.createEl("span", { text: objective.state, cls: "ll-thread-state" });
+				const row = section.createDiv({ cls: "ll-entity-item" });
+				row.createSpan({ text: objective.name, cls: "ll-entity-name" });
+				row.createSpan({ text: objective.state, cls: "ll-thread-state" });
 			});
 	}
 
 	private renderLootSection(container: HTMLElement, parsed: PartylogParsedDocument): void {
-		const section = container.createEl("div", { cls: "ll-dashboard-section" });
+		const section = container.createDiv({ cls: "ll-dashboard-section" });
 		section.createEl("h2", { text: t("views.partylog-loot") });
 		const activeLoot = Array.from(parsed.loot.values()).filter((item) => item.active);
 		if (activeLoot.length === 0) {
-			section.createEl("div", { text: t("views.no-story"), cls: "ll-empty-hint" });
+			section.createDiv({ text: t("views.no-story"), cls: "ll-empty-hint" });
 			return;
 		}
 		activeLoot.forEach((item) => {
-			const row = section.createEl("div", { cls: "ll-entity-item" });
-			row.createEl("span", { text: item.name, cls: "ll-entity-name" });
-			row.createEl("span", { text: item.tags.join(" · "), cls: "ll-thread-state" });
+			const row = section.createDiv({ cls: "ll-entity-item" });
+			row.createSpan({ text: item.name, cls: "ll-entity-name" });
+			row.createSpan({ text: item.tags.join(" · "), cls: "ll-thread-state" });
 		});
 	}
 
@@ -583,11 +583,11 @@ export class PartylogDashboardView extends ItemView {
 	}
 
 	private renderTimelineEntry(container: HTMLElement, entry: PartylogTimelineEntry): void {
-		const row = container.createEl("div", { cls: "ll-entity-item" });
+		const row = container.createDiv({ cls: "ll-entity-item" });
 		row.addEventListener("click", () => this.jumpToLine(entry.line));
 
-		const title = row.createEl("div");
-		title.createEl("div", { text: this.getTimelineLabel(entry), cls: "ll-entity-name" });
+		const title = row.createDiv();
+		title.createDiv({ text: this.getTimelineLabel(entry), cls: "ll-entity-name" });
 
 		const meta: string[] = [];
 		if (entry.sceneNumber) meta.push(entry.sceneNumber);
@@ -595,7 +595,7 @@ export class PartylogDashboardView extends ItemView {
 		if (!entry.sceneNumber && entry.interludeTitle) meta.push(entry.interludeTitle);
 		const detailParts = [entry.text, entry.outcome ? `→ ${entry.outcome}` : ""].filter(Boolean);
 		if (detailParts.length > 0) meta.push(detailParts.join(" "));
-		row.createEl("div", { text: meta.join(" · "), cls: "ll-thread-state" });
+		row.createDiv({ text: meta.join(" · "), cls: "ll-thread-state" });
 	}
 
 	private getTimelineLabel(entry: PartylogTimelineEntry): string {
@@ -630,61 +630,61 @@ export class PartylogDashboardView extends ItemView {
 	}
 
 	private renderMiniMetricList(container: HTMLElement, lines: string[]): void {
-		lines.forEach((line) => container.createEl("div", { text: line, cls: "ll-thread-state" }));
+		lines.forEach((line) => container.createDiv({ text: line, cls: "ll-thread-state" }));
 	}
 
 	private renderDialogueSection(container: HTMLElement, parsed: PartylogParsedDocument, limit: number): void {
 		if (parsed.dialogue.length === 0) {
-			container.createEl("div", { text: t("views.partylog-empty-dialogue"), cls: "ll-empty-hint" });
+			container.createDiv({ text: t("views.partylog-empty-dialogue"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		parsed.dialogue.slice(-limit).forEach((entry) => {
-			const row = container.createEl("div", { cls: "ll-entity-item" });
+			const row = container.createDiv({ cls: "ll-entity-item" });
 			row.addEventListener("click", () => this.jumpToLine(entry.line));
-			row.createEl("div", { text: entry.speaker, cls: "ll-entity-name" });
+			row.createDiv({ text: entry.speaker, cls: "ll-entity-name" });
 			const speakerMeta = [this.getSpeakerLabel(entry.speakerType)];
 			if (entry.sceneNumber) speakerMeta.push(entry.sceneNumber);
 			else if (entry.interludeTitle) speakerMeta.push(entry.interludeTitle);
-			row.createEl("div", { text: speakerMeta.join(" · "), cls: "ll-thread-state" });
-			row.createEl("div", { text: `“${entry.text}”`, cls: "ll-thread-state" });
+			row.createDiv({ text: speakerMeta.join(" · "), cls: "ll-thread-state" });
+			row.createDiv({ text: `“${entry.text}”`, cls: "ll-thread-state" });
 		});
 	}
 
 	private renderMetaSection(container: HTMLElement, parsed: PartylogParsedDocument, limit: number): void {
 		if (parsed.meta.length === 0) {
-			container.createEl("div", { text: t("views.partylog-empty-meta"), cls: "ll-empty-hint" });
+			container.createDiv({ text: t("views.partylog-empty-meta"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		parsed.meta.slice(-limit).forEach((entry) => {
-			const row = container.createEl("div", { cls: "ll-entity-item" });
+			const row = container.createDiv({ cls: "ll-entity-item" });
 			row.addEventListener("click", () => this.jumpToLine(entry.line));
-			row.createEl("div", { text: `(${entry.kind}:)`, cls: "ll-entity-name" });
+			row.createDiv({ text: `(${entry.kind}:)`, cls: "ll-entity-name" });
 			const metaParts = [...entry.parts];
 			if (entry.sceneNumber) metaParts.unshift(entry.sceneNumber);
 			else if (entry.interludeTitle) metaParts.unshift(entry.interludeTitle);
 			if (metaParts.length > 0) {
-				row.createEl("div", { text: metaParts.join(" · "), cls: "ll-thread-state" });
+				row.createDiv({ text: metaParts.join(" · "), cls: "ll-thread-state" });
 			}
-			row.createEl("div", { text: entry.text, cls: "ll-thread-state" });
+			row.createDiv({ text: entry.text, cls: "ll-thread-state" });
 		});
 	}
 
 	private renderNarrativeSection(container: HTMLElement, parsed: PartylogParsedDocument, limit: number): void {
 		if (parsed.narrativeBlocks.length === 0) {
-			container.createEl("div", { text: t("views.partylog-empty-narrative"), cls: "ll-empty-hint" });
+			container.createDiv({ text: t("views.partylog-empty-narrative"), cls: "ll-empty-hint" });
 			return;
 		}
 
 		parsed.narrativeBlocks.slice(-limit).forEach((entry) => {
-			const row = container.createEl("div", { cls: "ll-entity-item" });
+			const row = container.createDiv({ cls: "ll-entity-item" });
 			row.addEventListener("click", () => this.jumpToLine(entry.lineStart));
-			row.createEl("div", { text: entry.sceneNumber || entry.interludeTitle || `Lines ${entry.lineStart + 1}-${entry.lineEnd + 1}`, cls: "ll-entity-name" });
+			row.createDiv({ text: entry.sceneNumber || entry.interludeTitle || `Lines ${entry.lineStart + 1}-${entry.lineEnd + 1}`, cls: "ll-entity-name" });
 			if (entry.sceneContext) {
-				row.createEl("div", { text: entry.sceneContext, cls: "ll-thread-state" });
+				row.createDiv({ text: entry.sceneContext, cls: "ll-thread-state" });
 			}
-			row.createEl("div", { text: this.truncate(entry.text.replace(/\s+/g, " ").trim(), 180), cls: "ll-thread-state" });
+			row.createDiv({ text: this.truncate(entry.text.replace(/\s+/g, " ").trim(), 180), cls: "ll-thread-state" });
 		});
 	}
 
@@ -720,8 +720,8 @@ export class PartylogDashboardView extends ItemView {
 	}
 
 	private createStatCard(container: HTMLElement, label: string, value: string): void {
-		const card = container.createEl("div", { cls: "ll-stat-card" });
-		card.createEl("span", { text: value, cls: "ll-stat-value" });
-		card.createEl("span", { text: label, cls: "ll-stat-label" });
+		const card = container.createDiv({ cls: "ll-stat-card" });
+		card.createSpan({ text: value, cls: "ll-stat-value" });
+		card.createSpan({ text: label, cls: "ll-stat-label" });
 	}
 }

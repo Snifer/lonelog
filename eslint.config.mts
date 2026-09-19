@@ -13,7 +13,8 @@ export default tseslint.config(
 			parserOptions: {
 				projectService: {
 					allowDefaultProject: [
-						'eslint.config.js',
+						'eslint.config.mts',
+						'jest.config.cjs',
 						'manifest.json'
 					]
 				},
@@ -27,7 +28,8 @@ export default tseslint.config(
 		"node_modules",
 		"dist",
 		"esbuild.config.mjs",
-		"eslint.config.js",
+		"eslint.config.mts",
+		"jest.config.cjs",
 		"version-bump.mjs",
 		"versions.json",
 		"main.js",
