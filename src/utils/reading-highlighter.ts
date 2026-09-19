@@ -30,14 +30,14 @@ function renderLine(
 	lineIndexInBlock: number, // 0 if not in a code block
 	blockEl: HTMLElement // The element that defines the context for line number mapping
 ): void {
-	const lineEl = container.createEl("div", { cls: "ll-line" });
+	const lineEl = container.createDiv({ cls: "ll-line" });
 
 	// Render each token as a span (or text node if plain text)
 	for (const token of tokens) {
 		if (token.type === "text") {
 			lineEl.appendChild(container.ownerDocument.createTextNode(token.text));
 		} else {
-			lineEl.createEl("span", {
+			lineEl.createSpan({
 				cls: getTokenClass(token.type, "ll"),
 				text: token.text,
 			});
@@ -58,7 +58,7 @@ function renderLine(
 	) {
 		const notation = DiceRoller.extractNotation(rawLine);
 		if (notation) {
-			const btn = lineEl.createEl("span", {
+			const btn = lineEl.createSpan({
 				cls: "lonelog-dice-widget",
 				text: "🎲",
 				attr: { title: `Roll ${notation} (inserts result)`, role: "button", tabindex: "0" },
@@ -137,7 +137,7 @@ function renderLine(
 		const cardRequests = CardRoller.extractCardRequests(rawLine);
 		if (cardRequests.length > 0) {
 			const notation = cardRequests.map(c => c.original).join(", ");
-			const btn = lineEl.createEl("span", {
+			const btn = lineEl.createSpan({
 				cls: "lonelog-card-widget lonelog-dice-widget",
 				text: "🎴",
 				attr: { title: `Draw ${notation}`, role: "button", tabindex: "0" },

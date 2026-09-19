@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.4]
+
+### Bug Fixes & Refactoring
+
+- Fix dice parsing when using negative modifiers and context tags (closes #42).
+- Migrate DOM creation across all views and widgets to native Obsidian `createEl`, `createDiv`, and `createSpan` helpers.
+- Fix unnecessary type assertions and ESLint configuration.
+
 ## [1.6.3]
 
 ### Bug Fixes
