@@ -1,9 +1,11 @@
 import en from "./en";
 import es from "./es";
+import fr from "./fr";
 
 const locales: Record<string, Record<string, unknown>> = {
 	en,
 	es,
+	fr,
 };
 
 let currentLocale = "en";
