@@ -21,20 +21,20 @@
 		"@types/jest": "^30.0.0",
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",
-		"eslint-plugin-obsidianmd": "^0.4.2",
+		"eslint-plugin-obsidianmd": "^0.1.8",
 		"globals": "14.0.0",
-		"jest": "^30.3.0",
+		"jest": "^25.0.0",
 		"jiti": "2.6.1",
-		"ts-jest": "^29.4.0",
+		"ts-jest": "^27.0.3",
 		"ts-node": "^10.9.2",
 		"tslib": "2.4.0",
 		"typescript": "^5.8.3",
-		"typescript-eslint": "8.35.1"
+		"typescript-eslint": "^8.71.1"
 	},
 	"dependencies": {
 		"@codemirror/state": "6.5.0",
 		"@codemirror/view": "6.38.6",
 		"moment": "^2.31.0",
-		"obsidian": "latest"
+		"obsidian": "^1.13.1"
 	}
 }
