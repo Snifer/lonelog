@@ -30,6 +30,16 @@ describe('DiceRoller', () => {
         expect(DiceRoller.extractNotation('   d: d100')).toBe('d100');
     });
 
+    test('ignores context tags [...] when parsing dice and modifiers', () => {
+        const result = DiceRoller.roll('2d6-1 [power: silver tongue | against: suspicious-2]');
+        expect(result).not.toBeNull();
+        if (result) {
+            expect(result.modifier).toBe(-1);
+            expect(result.sides).toBe(6);
+            expect(result.rolls).toHaveLength(2);
+        }
+    });
+
     test('formats result in standard mode (NdS=total)', () => {
         const result9: RollResult = { notation: '2d6', total: 9, rolls: [5, 4], modifier: 0, sides: 6 };
         expect(DiceRoller.formatResult('d: 2d6', result9)).toBe('d: 2d6=9');

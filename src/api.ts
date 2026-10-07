@@ -693,7 +693,7 @@ class LonelogApiEvents {
 	): LonelogApiEventRef {
 		const id = this.nextId++;
 		const listeners = this.listeners.get(name) ?? new Map<number, (payload: unknown) => unknown>();
-		listeners.set(id, callback as (payload: unknown) => unknown);
+		listeners.set(id, callback);
 		this.listeners.set(name, listeners);
 		return { name, id };
 	}
@@ -706,7 +706,7 @@ class LonelogApiEvents {
 		if (!listeners) return;
 
 		for (const [id, registered] of listeners.entries()) {
-			if (registered === (callback as (payload: unknown) => unknown)) {
+			if (registered === (callback)) {
 				listeners.delete(id);
 			}
 		}
