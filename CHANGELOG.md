@@ -12,6 +12,7 @@
 - Fix `[N:Name]` NPC ally tags not appearing in the combat tracker; allies now display in the Party section (closes [#45](https://github.com/Snifer/lonelog/issues/45)).
 - Fix dungeon room names showing a duplicate `R` prefix (e.g. `RRoomname`) in the dungeon status and dashboard views.
 - Add support for valueless-max `[Track:Name X]` syntax; tracks without a `/max` now appear on the dashboard and progress panel displaying the current value only.
+- Update moment library version
 
 ## [1.6.4]
 
