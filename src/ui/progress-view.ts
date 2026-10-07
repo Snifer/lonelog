@@ -247,11 +247,19 @@ export class ProgressTrackerView extends ItemView {
 					`[E:$1 ${newCurrent}/$3]`
 				);
 			} else if (item.type === "track") {
-				// [Track:Name X/Y] — supports fractional values
-				newLine = line.replace(
-					/\[Track:([^\]]+)\s+([\d.]+)\/([\d.]+)\]/,
-					`[Track:$1 ${this.formatNumber(newCurrent)}/$3]`
-				);
+				if (item.max !== undefined) {
+					// [Track:Name X/Y] — supports fractional values
+					newLine = line.replace(
+						/\[Track:([^\]]+)\s+([\d.]+)\/([\d.]+)\]/,
+						`[Track:$1 ${this.formatNumber(newCurrent)}/$3]`
+					);
+				} else {
+					// [Track:Name X] — no max
+					newLine = line.replace(
+						/\[Track:([^\]]+)\s+([\d.]+)\]/,
+						`[Track:$1 ${this.formatNumber(newCurrent)}]`
+					);
+				}
 			} else {
 				// [Timer:Name X]
 				newLine = line.replace(

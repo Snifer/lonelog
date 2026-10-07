@@ -70,7 +70,7 @@ export interface ParsedSession {
 
 export interface ParsedCombatant {
 	name: string;
-	type: "pc" | "foe";
+	type: "pc" | "foe" | "ally";
 	stats: string[];
 	line: number;
 }
@@ -326,15 +326,18 @@ export class NotationParser {
 			});
 		}
 
-		// Tracks: [Track:Name X/Y]
+		// Tracks: [Track:Name X/Y] or [Track:Name X]  (max is optional)
 		// Supports inline update: [Track:Name X/Y ->newX/newY]
 		// Supports fractional values: [Track:Name 1.5/10] or [Track:Name 0.25/10 ->0.5/10]
-		const trackRegex = /\[Track:([^\]]+?)\s+(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)(?:\s*->\s*(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?))?\]/g;
+		const trackRegex = /\[Track:([^\]]+?)\s+(\d+(?:\.\d+)?)(?:\/(\d+(?:\.\d+)?))?(?:\s*->\s*(\d+(?:\.\d+)?)(?:\/(\d+(?:\.\d+)?))?)?\]/g;
 		while ((match = trackRegex.exec(content)) !== null) {
-			if (!match[1] || !match[2] || !match[3]) continue;
+			if (!match[1] || !match[2]) continue;
 			const name = match[1].trim();
+			// Inline update: groups 4/5 override groups 2/3
 			const current = match[4] !== undefined ? parseFloat(match[4]) : parseFloat(match[2]);
-			const max = match[5] !== undefined ? parseFloat(match[5]) : parseFloat(match[3]);
+			const max = match[5] !== undefined ? parseFloat(match[5])
+				: match[3] !== undefined ? parseFloat(match[3])
+				: undefined;
 			const line = this.getLineNumber(content, match.index);
 
 			progress.push({
@@ -1052,18 +1055,19 @@ export class NotationParser {
 			// If in a combat block, parse rounds and combatants
 			if (currentEncounter) {
 				// Round markers: Rd1, Rd2
-				const roundMatch = line.match(/^Rd(\d+)\b/i);
+				const roundMatch = line.match(/^\s*Rd(\d+)\b/i);
 				if (roundMatch && roundMatch[1]) {
 					currentEncounter.currentRound = parseInt(roundMatch[1]);
 				}
 
 				// Combatant tags: [F:...] and [PC:...]
 				// We'll scan the whole line for multiple tags
-				const tagRegex = /\[(PC|F):([^\]|]+)(?:\|([^\]]*))?\]/gi;
+				const tagRegex = /\[(PC|N|F):([^\]|]+)(?:\|([^\]]*))?\]/gi;
 				let m;
 				while ((m = tagRegex.exec(line)) !== null) {
 					if (!m[1] || !m[2]) continue;
-					const type = m[1].toUpperCase() === "PC" ? "pc" : "foe";
+					const tag = m[1].toUpperCase();
+					const type: "pc" | "foe" | "ally" = tag === "PC" ? "pc" : tag === "N" ? "ally" : "foe";
 					const name = m[2].trim();
 					const statsStr = m[3] || "";
 					const stats = statsStr.split("|").map(s => s.trim()).filter(s => s);

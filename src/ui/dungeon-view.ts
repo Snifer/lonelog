@@ -74,7 +74,7 @@ export class DungeonStatusView extends ItemView {
 			
 			const nameRow = item.createDiv({ cls: "lonelog-thread-item-name-row" });
 			const nameBtn = nameRow.createEl("button", { 
-				text: `R${room.id}`, 
+				text: room.id, 
 				cls: "lonelog-thread-item-name" 
 			});
 			nameBtn.addEventListener("click", () => this.jumpToLine(room.lastMention));

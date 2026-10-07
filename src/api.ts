@@ -504,7 +504,7 @@ export interface LonelogApiLonelogJsonDocument {
 		currentRound: number;
 		combatants: Array<{
 			name: string;
-			type: "pc" | "foe";
+			type: "pc" | "foe" | "ally";
 			stats: string[];
 			line: number;
 		}>;
@@ -635,14 +635,14 @@ export interface LonelogApiRoomTagInput {
 }
 
 export interface LonelogApiCombatantInput {
-	type: "pc" | "foe";
+	type: "pc" | "foe" | "ally";
 	name: string;
 	stats?: string[];
 }
 
 export interface LonelogApiCombatantUpdateInput {
 	name: string;
-	type?: "pc" | "foe";
+	type?: "pc" | "foe" | "ally";
 	stats?: string[];
 }
 

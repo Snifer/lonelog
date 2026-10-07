@@ -101,7 +101,7 @@ export class CombatTrackerView extends ItemView {
 
 		// Separate PCs and Foes
 		const combatants = Array.from(encounter.combatants.values());
-		const pcs = combatants.filter(c => c.type === "pc");
+		const pcs = combatants.filter(c => c.type === "pc" || c.type === "ally");
 		const foes = combatants.filter(c => c.type === "foe");
 
 		if (pcs.length > 0) {

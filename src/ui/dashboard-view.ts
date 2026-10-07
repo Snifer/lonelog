@@ -201,7 +201,7 @@ export class DashboardView extends ItemView {
 		this.elements.rooms.forEach(room => {
 			const item = list.createDiv({ cls: "ll-entity-item" });
 			const nameCol = item.createDiv({ cls: "ll-room-info" });
-			nameCol.createSpan({ text: `R${room.id}`, cls: "ll-entity-name" });
+			nameCol.createSpan({ text: room.id, cls: "ll-entity-name" });
 			if (room.description) {
 				nameCol.createSpan({ text: room.description, cls: "ll-room-desc" });
 			}
