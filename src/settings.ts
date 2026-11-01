@@ -391,6 +391,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 				dropdown
 					.addOption("en", "English")
 					.addOption("es", "Español")
+					.addOption("fr", "Français")
 					.setValue(this.plugin.settings.locale)
 						.onChange(async (value) => {
 							this.plugin.settings.locale = value;
