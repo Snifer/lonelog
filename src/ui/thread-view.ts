@@ -3,8 +3,10 @@
  * Displays all NPCs, locations, threads, and PCs with navigation
  */
 
-import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
+import { ItemView, WorkspaceLeaf } from "obsidian";
 import { t } from "../i18n/i18n";
+import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
+import LonelogPlugin from "../main";
 import {
 	NotationParser,
 	ParsedElements,
@@ -16,11 +18,13 @@ export const THREAD_VIEW_TYPE = "lonelog-thread-view";
 
 export class ThreadBrowserView extends ItemView {
 	private parsedElements: ParsedElements | null = null;
-	private currentFile: TFile | null = null;
+	private campaign: Campaign | null = null;
 	private lastRefreshId: number = 0;
+	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf) {
+	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
 		super(leaf);
+		this.plugin = plugin;
 	}
 
 	getViewType(): string {
@@ -47,13 +51,7 @@ export class ThreadBrowserView extends ItemView {
 		);
 
 		// Listen for file modifications
-		this.registerEvent(
-			this.app.vault.on("modify", (file) => {
-				if (file === this.currentFile) {
-					void this.refresh();
-				}
-			})
-		);
+		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
 
 		void this.refresh();
 		return Promise.resolve();
@@ -74,15 +72,13 @@ export class ThreadBrowserView extends ItemView {
 			return;
 		}
 
-		this.currentFile = activeFile;
-
-		// Read and parse file
-		const content = await this.app.vault.read(activeFile);
+		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
 
 		// If a new refresh has started, don't proceed with this one
 		if (refreshId !== this.lastRefreshId) return;
 
-		this.parsedElements = NotationParser.parse(content);
+		this.campaign = campaign;
+		this.parsedElements = NotationParser.parse(campaign.content);
 
 		// Render header
 		const header = container.createDiv({
@@ -423,19 +419,7 @@ export class ThreadBrowserView extends ItemView {
 	}
 
 	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView(
-					{ from: { line, ch: 0 }, to: { line, ch: 0 } },
-					true
-				);
-			}
-		});
+		void openCampaignLine(this.app, this.campaign, line);
 	}
 
 	async onClose(): Promise<void> {

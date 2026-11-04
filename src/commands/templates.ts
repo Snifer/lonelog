@@ -1,4 +1,5 @@
 import { App, Editor, Modal, Setting } from "obsidian";
+import type { EditorContext } from "../utils/campaign-context";
 
 // Campaign Header Modal and related types
 export interface CampaignHeaderData {
@@ -310,8 +311,8 @@ notes:
 	/**
 	 * Detect the next session number by scanning for existing sessions
 	 */
-	static getNextSessionNumber(editor: Editor): number {
-		const content = editor.getValue();
+	static getNextSessionNumber(context: EditorContext): number {
+		const content = context.content;
 		const sessionRegex = /^## Session (\d+)/gm;
 		let maxSession = 0;
 		let match;
@@ -331,8 +332,8 @@ notes:
 	/**
 	 * Insert session header with auto-numbering and date
 	 */
-	static insertSessionHeader(editor: Editor): void {
-		const sessionNum = this.getNextSessionNumber(editor);
+	static insertSessionHeader(editor: Editor, context: EditorContext): void {
+		const sessionNum = this.getNextSessionNumber(context);
 		const today = new Date().toISOString().split("T")[0];
 
 		const template = `## Session ${sessionNum}
@@ -363,9 +364,9 @@ notes:
 	/**
 	 * Detect the next scene number in the current session
 	 */
-	static getNextSceneNumber(editor: Editor): string {
-		const content = editor.getValue();
-		const cursor = editor.getCursor();
+	static getNextSceneNumber(editor: Editor, context: EditorContext): string {
+		const content = context.content;
+		const cursor = this.getContextCursor(editor, context);
 		const lines = content.split("\n");
 
 		// Find the most recent session header before cursor
@@ -443,9 +444,9 @@ notes:
 	/**
 	 * Detect the return scene number (S3b -> S4)
 	 */
-	static getReturnFromFlashbackNumber(editor: Editor): string {
-		const content = editor.getValue();
-		const cursor = editor.getCursor();
+	static getReturnFromFlashbackNumber(editor: Editor, context: EditorContext): string {
+		const content = context.content;
+		const cursor = this.getContextCursor(editor, context);
 		const lines = content.split("\n");
 
 		let lastSceneMarker = "";
@@ -464,7 +465,15 @@ notes:
 		}
 
 		// If not in a flashback, just do standard increment
-		return this.getNextSceneNumber(editor);
+		return this.getNextSceneNumber(editor, context);
+	}
+
+	/**
+	 * Cursor position, either within the full campaign content, or the current file's editor content
+	 */
+	private static getContextCursor(editor: Editor, context: EditorContext): { line: number; ch: number } {
+		const cursor = editor.getCursor();
+		return { line: cursor.line + context.lineOffset, ch: cursor.ch };
 	}
 
 	/**
@@ -474,15 +483,16 @@ notes:
 		app: App,
 		editor: Editor,
 		promptForContext: boolean,
-		isReturnFromFlashback: boolean = false
+		isReturnFromFlashback: boolean,
+		context: EditorContext
 	): void {
 		const sceneNum = isReturnFromFlashback 
-			? this.getReturnFromFlashbackNumber(editor) 
-			: this.getNextSceneNumber(editor);
+			? this.getReturnFromFlashbackNumber(editor, context)
+			: this.getNextSceneNumber(editor, context);
 
 		if (promptForContext) {
-			new SceneContextModal(app, (context) => {
-				const template = `### ${sceneNum} *${context}*
+			new SceneContextModal(app, (sceneContext) => {
+				const template = `### ${sceneNum} *${sceneContext}*
 
 `;
 				editor.replaceSelection(template);

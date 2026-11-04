@@ -1,4 +1,4 @@
-import { Menu, MenuItem, Plugin, TFile } from "obsidian";
+import { Editor, MarkdownFileInfo, MarkdownView, Menu, MenuItem, Plugin, TFile } from "obsidian";
 import { setLocale, t } from "./i18n/i18n";
 import {
 	DEFAULT_SETTINGS, LonelogSettings, LonelogSettingTab, applyHighlightColors, removeHighlightColors
@@ -18,6 +18,7 @@ import { PartylogDashboardView, PARTYLOG_DASHBOARD_VIEW_TYPE } from "./ui/partyl
 import { lonelogBlockProcessor, lonelogGlobalProcessor } from "./utils/reading-highlighter";
 import { lonelogEditorPlugin } from "./utils/editor-highlighter";
 import { createLonelogApi, type LonelogApi } from "./api";
+import { EditorContext, loadEditorContext, singleFileContext } from "./utils/campaign-context";
 
 export default class LonelogPlugin extends Plugin {
 	settings: LonelogSettings;
@@ -68,15 +69,15 @@ export default class LonelogPlugin extends Plugin {
 		// Register views
 		this.registerView(
 			PROGRESS_VIEW_TYPE,
-			(leaf) => new ProgressTrackerView(leaf)
+			(leaf) => new ProgressTrackerView(leaf, this)
 		);
 		this.registerView(
 			THREAD_VIEW_TYPE,
-			(leaf) => new ThreadBrowserView(leaf)
+			(leaf) => new ThreadBrowserView(leaf, this)
 		);
 		this.registerView(
 			SCENE_NAV_TYPE,
-			(leaf) => new SceneNavigatorView(leaf)
+			(leaf) => new SceneNavigatorView(leaf, this)
 		);
 		this.registerView(
 			DASHBOARD_VIEW_TYPE,
@@ -84,15 +85,15 @@ export default class LonelogPlugin extends Plugin {
 		);
 		this.registerView(
 			COMBAT_VIEW_TYPE,
-			(leaf) => new CombatTrackerView(leaf)
+			(leaf) => new CombatTrackerView(leaf, this)
 		);
 		this.registerView(
 			DUNGEON_VIEW_TYPE,
-			(leaf) => new DungeonStatusView(leaf)
+			(leaf) => new DungeonStatusView(leaf, this)
 		);
 		this.registerView(
 			RESOURCE_VIEW_TYPE,
-			(leaf) => new ResourceStatusView(leaf)
+			(leaf) => new ResourceStatusView(leaf, this)
 		);
 		this.registerView(
 			PARTYLOG_DASHBOARD_VIEW_TYPE,
@@ -110,7 +111,7 @@ export default class LonelogPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(PARTYLOG_DASHBOARD_VIEW_TYPE);
 
 		// Register auto-completion
-		this.autoComplete = new LonelogAutoComplete(this.app);
+		this.autoComplete = new LonelogAutoComplete(this.app, this.settings);
 		this.registerEditorSuggest(this.autoComplete);
 
 		// Add Ribbon Icon for View Selector
@@ -233,8 +234,10 @@ export default class LonelogPlugin extends Plugin {
 		this.addCommand({
 			id: "roll-dice-on-line",
 			name: t("commands.roll-dice-on-line"),
-			editorCallback: (editor) => {
-				NotationCommands.rollDiceOnLine(editor, this.settings);
+			editorCallback: (editor, ctx) => {
+				void this.withEditorContext(editor, ctx, (context) => {
+					NotationCommands.rollDiceOnLine(editor, this.settings, context);
+				});
 			},
 		});
 
@@ -292,16 +295,20 @@ export default class LonelogPlugin extends Plugin {
 		this.addCommand({
 			id: "insert-event-clock",
 			name: t("commands.insert-event-clock"),
-			editorCallback: (editor) => {
-				NotationCommands.insertEventClock(this.app, editor, this.settings);
+			editorCallback: (editor, ctx) => {
+				void this.withEditorContext(editor, ctx, (context) => {
+					NotationCommands.insertEventClock(this.app, editor, this.settings, context);
+				});
 			},
 		});
 
 		this.addCommand({
 			id: "insert-track",
 			name: t("commands.insert-track"),
-			editorCallback: (editor) => {
-				NotationCommands.insertTrack(this.app, editor, this.settings);
+			editorCallback: (editor, ctx) => {
+				void this.withEditorContext(editor, ctx, (context) => {
+					NotationCommands.insertTrack(this.app, editor, this.settings, context);
+				});
 			},
 		});
 
@@ -423,33 +430,42 @@ export default class LonelogPlugin extends Plugin {
 		this.addCommand({
 			id: "insert-session-header",
 			name: t("commands.insert-session-header"),
-			editorCallback: (editor) => {
-				TemplateCommands.insertSessionHeader(editor);
+			editorCallback: (editor, ctx) => {
+				void this.withEditorContext(editor, ctx, (context) => {
+					TemplateCommands.insertSessionHeader(editor, context);
+				});
 			},
 		});
 
 		this.addCommand({
 			id: "insert-scene-marker",
 			name: t("commands.insert-scene-marker"),
-			editorCallback: (editor) => {
-				TemplateCommands.insertSceneMarker(
-					this.app,
-					editor,
-					this.settings.promptForSceneContext
-				);
+			editorCallback: (editor, ctx) => {
+				void this.withEditorContext(editor, ctx, (context) => {
+					TemplateCommands.insertSceneMarker(
+						this.app,
+						editor,
+						this.settings.promptForSceneContext,
+						false,
+						context
+					);
+				});
 			},
 		});
 
 		this.addCommand({
 			id: "insert-scene-return",
 			name: t("commands.insert-scene-return"),
-			editorCallback: (editor) => {
-				TemplateCommands.insertSceneMarker(
-					this.app,
-					editor,
-					this.settings.promptForSceneContext,
-					true
-				);
+			editorCallback: (editor, ctx) => {
+				void this.withEditorContext(editor, ctx, (context) => {
+					TemplateCommands.insertSceneMarker(
+						this.app,
+						editor,
+						this.settings.promptForSceneContext,
+						true,
+						context
+					);
+				});
 			},
 		});
 
@@ -546,6 +562,51 @@ export default class LonelogPlugin extends Plugin {
 				if (!this.settings.enablePartylogAddon) return;
 				void this.activateView(PARTYLOG_DASHBOARD_VIEW_TYPE);
 			},
+		});
+	}
+
+	/**
+	 * Run an editor command with the earlier campaign files plus the editor content as context
+	 */
+	private async withEditorContext(
+		editor: Editor,
+		ctx: MarkdownView | MarkdownFileInfo,
+		run: (context: EditorContext) => void
+	): Promise<void> {
+		const liveContent = editor.getValue();
+		const { campaignScope } = this.settings;
+		let context: EditorContext;
+
+		try {
+			context = await loadEditorContext(this.app, ctx.file, campaignScope, liveContent);
+		} catch (error) {
+			// Loading campaign files failed, use the editor's content as fallback
+			console.error("Error reading campaign files:", error);
+			context = singleFileContext(liveContent);
+		}
+		run(context);
+	}
+
+	/**
+	 * Re-render all open Lonelog views, e.g. after the campaignScope setting changed
+	 */
+	refreshViews(): void {
+		const viewTypes = [
+			COMBAT_VIEW_TYPE,
+			DASHBOARD_VIEW_TYPE,
+			DUNGEON_VIEW_TYPE,
+			PARTYLOG_DASHBOARD_VIEW_TYPE,
+			PROGRESS_VIEW_TYPE,
+			RESOURCE_VIEW_TYPE,
+			SCENE_NAV_TYPE,
+			THREAD_VIEW_TYPE,
+		];
+		viewTypes.forEach((viewType) => {
+			this.app.workspace.getLeavesOfType(viewType).forEach((leaf) => {
+				// Call refresh() an any View object that has such a method
+				const view = leaf.view as { refresh?: () => unknown };
+				void view.refresh?.();
+			});
 		});
 	}
 

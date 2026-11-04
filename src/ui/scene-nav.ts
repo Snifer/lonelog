@@ -3,18 +3,22 @@
  * Displays an outline of all sessions and scenes for easy navigation
  */
 
-import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
+import { ItemView, WorkspaceLeaf } from "obsidian";
+import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
+import LonelogPlugin from "../main";
 import { NotationParser, ParsedSession, ParsedScene } from "../utils/parser";
 
 export const SCENE_NAV_TYPE = "lonelog-scene-nav";
 
 export class SceneNavigatorView extends ItemView {
 	private sessions: ParsedSession[] = [];
-	private currentFile: TFile | null = null;
+	private campaign: Campaign | null = null;
 	private lastRefreshId: number = 0;
+	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf) {
+	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
 		super(leaf);
+		this.plugin = plugin;
 	}
 
 	getViewType(): string {
@@ -41,13 +45,7 @@ export class SceneNavigatorView extends ItemView {
 		);
 
 		// Listen for file modifications
-		this.registerEvent(
-			this.app.vault.on("modify", (file) => {
-				if (file === this.currentFile) {
-					void this.refresh();
-				}
-			})
-		);
+		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
 
 		void this.refresh();
 		return Promise.resolve();
@@ -68,15 +66,13 @@ export class SceneNavigatorView extends ItemView {
 			return;
 		}
 
-		this.currentFile = activeFile;
+		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
 
-		// Read and parse file
-		const content = await this.app.vault.read(activeFile);
-		
 		// If a new refresh has started, don't proceed with this one
 		if (refreshId !== this.lastRefreshId) return;
 
-		const parsed = NotationParser.parse(content);
+		this.campaign = campaign;
+		const parsed = NotationParser.parse(campaign.content);
 		this.sessions = parsed.sessions;
 
 		// Render header
@@ -187,19 +183,7 @@ export class SceneNavigatorView extends ItemView {
 	}
 
 	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView(
-					{ from: { line, ch: 0 }, to: { line, ch: 0 } },
-					true
-				);
-			}
-		});
+		void openCampaignLine(this.app, this.campaign, line);
 	}
 
 	async onClose(): Promise<void> {

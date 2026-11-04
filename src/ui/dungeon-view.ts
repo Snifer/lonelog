@@ -3,7 +3,9 @@
  * A dedicated sidebar view for tracking rooms and dungeon exploration.
  */
 
-import { ItemView, WorkspaceLeaf, TFile } from "obsidian";
+import { ItemView, WorkspaceLeaf } from "obsidian";
+import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
+import LonelogPlugin from "../main";
 import { NotationParser, ParsedElements } from "../utils/parser";
 import { t } from "../i18n/i18n";
 
@@ -11,10 +13,13 @@ export const DUNGEON_VIEW_TYPE = "lonelog-dungeon-view";
 
 export class DungeonStatusView extends ItemView {
 	private elements: ParsedElements | null = null;
-	private currentFile: TFile | null = null;
+	private campaign: Campaign | null = null;
+	private lastRefreshId: number = 0;
+	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf) {
+	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
 		super(leaf);
+		this.plugin = plugin;
 	}
 
 	getViewType(): string {
@@ -31,14 +36,13 @@ export class DungeonStatusView extends ItemView {
 
 	async onOpen(): Promise<void> {
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => void this.refresh()));
-		this.registerEvent(this.app.vault.on("modify", (file) => {
-			if (file === this.currentFile) void this.refresh();
-		}));
+		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
 		
 		await this.refresh();
 	}
 
 	async refresh(): Promise<void> {
+		const refreshId = ++this.lastRefreshId;
 		const container = this.contentEl;
 		container.empty();
 		container.addClass("lonelog-thread-container"); // Reuse the same premium sidebar padding/styles
@@ -52,9 +56,12 @@ export class DungeonStatusView extends ItemView {
 			return;
 		}
 
-		this.currentFile = activeFile;
-		const content = await this.app.vault.read(activeFile);
-		this.elements = NotationParser.parse(content);
+		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
+
+		if (refreshId !== this.lastRefreshId) return;
+
+		this.campaign = campaign;
+		this.elements = NotationParser.parse(this.campaign.content);
 
 		const header = container.createDiv({ cls: "lonelog-thread-header" });
 		header.createEl("h4", { text: t("views.dungeon-header") });
@@ -104,15 +111,6 @@ export class DungeonStatusView extends ItemView {
 	}
 
 	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView({ from: { line, ch: 0 }, to: { line, ch: 0 } }, true);
-			}
-		});
+		void openCampaignLine(this.app, this.campaign, line);
 	}
 }

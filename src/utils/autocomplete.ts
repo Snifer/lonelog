@@ -13,6 +13,8 @@ import {
 	TFile,
 } from "obsidian";
 import { NotationParser, ParsedElements } from "./parser";
+import { loadEditorContext } from "./campaign-context";
+import type { LonelogSettings } from "../settings";
 
 interface TagSuggestion {
 	name: string;
@@ -24,12 +26,14 @@ interface TagSuggestion {
 }
 
 export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
+	private parsing: Promise<ParsedElements> | null = null;
 	private parsedElements: ParsedElements | null = null;
-	private lastContent: string = "";
 	private activeSessionKey: string | null = null;
+	private settings: LonelogSettings;
 
-	constructor(app: App) {
+	constructor(app: App, settings: LonelogSettings) {
 		super(app);
+		this.settings = settings;
 	}
 
 	/**
@@ -54,10 +58,10 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 
 			// Parse once when entering a new autocomplete session and reuse the result
 			// while the user keeps typing inside the same tag context.
+			// The campaign files are read asynchronously, so parsing happens in getSuggestions().
 			if (sessionKey !== this.activeSessionKey) {
-				const content = editor.getValue();
-				this.parsedElements = NotationParser.parse(content);
-				this.lastContent = content;
+				this.parsedElements = null;
+				this.parsing = null;
 				this.activeSessionKey = sessionKey;
 			}
 
@@ -86,15 +90,53 @@ export class LonelogAutoComplete extends EditorSuggest<TagSuggestion> {
 			return [];
 		}
 
-		// Parse document if needed. In the common case, onTrigger already parsed
-		// once for the active autocomplete session, so query updates don't keep
-		// reparsing the full document.
+		// Parse the earlier campaign files plus the current document content only once
+		// per autocomplete session, so query updates don't keep reparsing everything.
 		if (!this.parsedElements) {
-			const content = context.editor.getValue();
-			this.parsedElements = NotationParser.parse(content);
-			this.lastContent = content;
+			const sessionKey = this.activeSessionKey;
+			return this.parseCampaign(context).then((parsed) => {
+				if (sessionKey !== this.activeSessionKey) {
+					// New autocomplete session started while the notes were read
+					return [];
+				}
+				this.parsedElements = parsed;
+				return this.getSuggestionsForTag(context);
+			});
 		}
 
+		return this.getSuggestionsForTag(context);
+	}
+
+	/**
+	 * Parse the earlier campaign files plus the live editor content
+	 */
+	private parseCampaign(context: EditorSuggestContext): Promise<ParsedElements> {
+		if (!this.parsing) {
+			this.parsing = this.loadAndParse(context);
+		}
+		return this.parsing;
+	}
+
+	private async loadAndParse(context: EditorSuggestContext): Promise<ParsedElements> {
+		const liveContent = context.editor.getValue();
+		try {
+			const { content } = await loadEditorContext(
+				this.app,
+				context.file,
+				this.settings.campaignScope,
+				liveContent
+			);
+			return NotationParser.parse(content);
+		} catch (error) {
+			console.error("Error reading campaign files for autocomplete:", error);
+			return NotationParser.parse(liveContent);
+		}
+	}
+
+	/**
+	 * Get suggestions from the parsed campaign content for the tag that's currently being typed
+	 */
+	private getSuggestionsForTag(context: EditorSuggestContext): TagSuggestion[] {
 		if (!this.parsedElements) {
 			return [];
 		}

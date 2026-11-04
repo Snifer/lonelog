@@ -4,6 +4,7 @@ import { TrackModal } from "./templates";
 import { TableResolver, TableDefinition } from "../utils/table-resolver";
 import { RollManager } from "../utils/roll-manager";
 import { CardRoller } from "../utils/card-roller";
+import type { EditorContext } from "../utils/campaign-context";
 
 export class NotationCommands {
 	// Single symbol insertions
@@ -92,9 +93,9 @@ export class NotationCommands {
 		}
 	}
 
-	static insertEventClock(app: App, editor: Editor, settings: LonelogSettings): void {
-		// Scan the live editor content for the last [E:Name y/X] tag
-		const content = editor.getValue();
+	static insertEventClock(app: App, editor: Editor, settings: LonelogSettings, context: EditorContext): void {
+		// Scan the campaign content for the last [E:Name y/X] tag
+		const content = context.content;
 		const eventRegex = /\[E:([^\]]+?)\s+(\d+)\/(\d+)\]/g;
 		let lastMatch: RegExpMatchArray | null = null;
 		let match: RegExpMatchArray | null;
@@ -129,7 +130,7 @@ export class NotationCommands {
 		}
 	}
 
-	static insertTrack(app: App, editor: Editor, settings: LonelogSettings): void {
+	static insertTrack(app: App, editor: Editor, settings: LonelogSettings, context: EditorContext): void {
 		const activeFile = app.workspace.getActiveFile();
 		if (!activeFile) {
 			// Fallback to simple insertion if no active file
@@ -161,31 +162,30 @@ export class NotationCommands {
 				return;
 			}
 
-			// Read file content and look for existing track
-			void app.vault.read(activeFile).then((content) => {
+			// Look for existing track in the campaign content
+			const content = context.content;
 			const trackRegex = new RegExp(`\\[Track:${trackName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+([\\d.]+)/([\\d.]+)\\]`, 'g');
-				let lastMatch: RegExpMatchArray | null = null;
-				let match: RegExpMatchArray | null;
+			let lastMatch: RegExpMatchArray | null = null;
+			let match: RegExpMatchArray | null;
 
-				// Find the last occurrence of this track
-				while ((match = trackRegex.exec(content)) !== null) {
-					lastMatch = match;
-				}
+			// Find the last occurrence of this track
+			while ((match = trackRegex.exec(content)) !== null) {
+				lastMatch = match;
+			}
 
-				let text: string;
-				if (lastMatch && lastMatch[1] && lastMatch[2]) {
-					// Track exists - increment the counter
-					const currentValue = parseFloat(lastMatch[1]);
-					const maxFromDoc = parseFloat(lastMatch[2]);
-					const newValue = Math.min(currentValue + 1, maxFromDoc);
-					text = `[Track:${trackName} ${newValue}/${maxFromDoc}]`;
-				} else {
-					// New track - start at 0
-					text = `[Track:${trackName} 0/${maxValue}]`;
-				}
+			let text: string;
+			if (lastMatch && lastMatch[1] && lastMatch[2]) {
+				// Track exists - increment the counter
+				const currentValue = parseFloat(lastMatch[1]);
+				const maxFromDoc = parseFloat(lastMatch[2]);
+				const newValue = Math.min(currentValue + 1, maxFromDoc);
+				text = `[Track:${trackName} ${newValue}/${maxFromDoc}]`;
+			} else {
+				// New track - start at 0
+				text = `[Track:${trackName} 0/${maxValue}]`;
+			}
 
-				editor.replaceSelection(text);
-			});
+			editor.replaceSelection(text);
 		});
 		modal.open();
 	}
@@ -245,13 +245,13 @@ export class NotationCommands {
 			);
 		}
 	}
-	static rollDiceOnLine(editor: Editor, settings: LonelogSettings): void {
+	static rollDiceOnLine(editor: Editor, settings: LonelogSettings, context: EditorContext): void {
 		const cursor = editor.getCursor();
 		const lineNum = cursor.line;
 		const lineText = String(editor.getLine(lineNum) ?? "");
 
-		const fullContent = String(editor.getValue() ?? "");
-		const tables = TableResolver.parseTables(fullContent);
+		// Tables may also be defined in earlier campaign files
+		const tables = TableResolver.parseTables(context.content);
 
 		// 1. Detection: Are we on a gen: header?
 		const isGenHeader = lineText.trimStart().toLowerCase().startsWith("gen:");

@@ -3,7 +3,8 @@
  * A unified, premium interface for managing all campaign elements in one place.
  */
 
-import { ItemView, TFile, WorkspaceLeaf, debounce } from "obsidian";
+import { ItemView, WorkspaceLeaf, debounce } from "obsidian";
+import { Campaign, getCampaignTitle, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
 import { NotationParser, ParsedElements } from "../utils/parser";
 import { t } from "../i18n/i18n";
 import LonelogPlugin from "../main";
@@ -11,7 +12,8 @@ import LonelogPlugin from "../main";
 export const DASHBOARD_VIEW_TYPE = "lonelog-dashboard";
 
 export class DashboardView extends ItemView {
-	private currentFile: TFile | null = null;
+	private campaign: Campaign | null = null;
+	private lastRefreshId: number = 0;
 	private elements: ParsedElements | null = null;
 	private plugin: LonelogPlugin;
 
@@ -47,19 +49,14 @@ export class DashboardView extends ItemView {
 		);
 
 		// Listen for file modifications
-		this.registerEvent(
-			this.app.vault.on("modify", (file) => {
-				if (file === this.currentFile) {
-					this.debouncedRefresh();
-				}
-			})
-		);
+		registerCampaignRefresh(this, this.app, () => this.campaign, () => this.debouncedRefresh());
 
 		this.debouncedRefresh();
 		return Promise.resolve();
 	}
 
 	async refresh(): Promise<void> {
+		const refreshId = ++this.lastRefreshId;
 		const container = this.contentEl;
 		container.empty();
 
@@ -72,12 +69,16 @@ export class DashboardView extends ItemView {
 			return;
 		}
 
-		this.currentFile = activeFile;
-		const content = await this.app.vault.read(activeFile);
-		this.elements = NotationParser.parse(content);
+		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
+
+		// If a new refresh has started, don't proceed with this one
+		if (refreshId !== this.lastRefreshId) return;
+
+		this.campaign = campaign;
+		this.elements = NotationParser.parse(this.campaign.content);
 
 		// --- HEADER ---
-		this.renderHeader(container, activeFile.basename);
+		this.renderHeader(container, getCampaignTitle(this.app, this.campaign));
 
 		// --- MAIN GRID ---
 		const grid = container.createDiv({ cls: "ll-dashboard-grid" });
@@ -307,19 +308,7 @@ export class DashboardView extends ItemView {
 
 
 	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView(
-					{ from: { line, ch: 0 }, to: { line, ch: 0 } },
-					true
-				);
-			}
-		});
+		void openCampaignLine(this.app, this.campaign, line);
 	}
 
 	async onClose(): Promise<void> {

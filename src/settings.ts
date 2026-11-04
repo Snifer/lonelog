@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import LonelogPlugin from "./main";
 import { t, setLocale } from "./i18n/i18n";
+import { CAMPAIGN_SCOPES, type CampaignScope, isCampaignScope } from "./utils/campaign-content";
 
 export interface LonelogSettings {
 	// Phase 1 settings
@@ -71,6 +72,7 @@ export interface LonelogSettings {
 	tokenFontWeight: string;  // Boldness for tokens
 	blockFontFamily: string; // Font family for the codeblocks
 	blockFontSize: string; // Font size for the codeblocks
+	campaignScope: CampaignScope; // Campaign files: active file, whole folder, or folder up to the active file
 }
 
 export const DEFAULT_SETTINGS: LonelogSettings = {
@@ -138,6 +140,7 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	tokenFontWeight: "normal",
 	blockFontFamily: "",
 	blockFontSize: "",
+	campaignScope: "file",
 };
 
 /** Sets Lonelog CSS custom properties on document.body */
@@ -423,6 +426,32 @@ export class LonelogSettingTab extends PluginSettingTab {
 						});
 				}
 			);
+
+		const campaignSection = this.renderSubsection(containerEl, t("settings.subsection-campaign"));
+
+		const scopeLabels: Record<CampaignScope, string> = {
+			"file": t("settings.campaign-scope-file"),
+			"folder": t("settings.campaign-scope-folder"),
+			"folder-until-active": t("settings.campaign-scope-folder-until-active"),
+		};
+
+		new Setting(campaignSection)
+			.setName(t("settings.campaign-scope"))
+			.setDesc(t("settings.campaign-scope-desc"))
+			.addDropdown((dropdown) => {
+				for (const scope of CAMPAIGN_SCOPES) {
+					dropdown.addOption(scope, scopeLabels[scope]);
+				}
+
+				dropdown
+					.setValue(this.plugin.settings.campaignScope)
+					.onChange(async (value) => {
+						if (!isCampaignScope(value)) return;
+						this.plugin.settings.campaignScope = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshViews();
+					});
+			});
 
 		const editorSection = this.renderSubsection(containerEl, t("settings.subsection-syntax-editor"));
 

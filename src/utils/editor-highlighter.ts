@@ -7,12 +7,14 @@
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
 import { Range, RangeSetBuilder } from "@codemirror/state";
 import { EditorState } from "@codemirror/state";
+import { editorInfoField } from "obsidian";
 import { tokenizeLines, getTokenClass, Token } from "./lonelog-tokenizer";
 import { DiceRoller } from "./dice-roller";
 import { CardRoller } from "./card-roller";
 import { TableResolver } from "./table-resolver";
 import { RollManager } from "./roll-manager";
 import { LonelogSettings } from "../settings";
+import { loadEditorContext } from "./campaign-context";
 
 function asString(value: unknown): string {
 	return typeof value === "string" ? value : typeof value === "number" || typeof value === "boolean" ? String(value) : "";
@@ -76,29 +78,47 @@ class DiceWidget extends WidgetType {
 		span.onmousedown = (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			this.roll(view, span);
+			void this.roll(view, span);
 		};
 		// Also support touch
 		span.ontouchstart = (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			this.roll(view, span);
+			void this.roll(view, span);
 		};
 
 		return span;
 	}
 
-	private roll(view: EditorView, element: HTMLElement): void {
+	private async roll(view: EditorView, element: HTMLElement): Promise<void> {
 		// Find the actual line using the element's current DOM position
 		const pos = view.posAtDOM(element);
 		if (pos === null) return;
-		const line = view.state.doc.lineAt(pos);
+		const doc = view.state.doc;
+		const line = doc.lineAt(pos);
 		const lineText = asString(line.text);
-		
+
 		// 1. Detection: Are we on a gen: header?
 		const isGenHeader = lineText.trimStart().toLowerCase().startsWith("gen:");
-		const fullContent = asString(view.state.doc.toString());
-		const tables = TableResolver.parseTables(fullContent);
+		const fullContent = asString(doc.toString());
+
+		// Tables may also be defined in earlier campaign notes.
+		// Load full campaign content if possible, otherwise fallback to the current document content.
+		let content = fullContent;
+		const info = view.state.field(editorInfoField, false);
+		if (info && this.settings.campaignScope !== "file") {
+			try {
+				({ content } = await loadEditorContext(info.app, info.file, this.settings.campaignScope, fullContent));
+			} catch (error) {
+				console.error("Error reading campaign files for highlighter:", error);
+			}
+
+			if (view.state.doc !== doc) {
+				// Document was edited while loading the campaign files, abort
+				return;
+			}
+		}
+		const tables = TableResolver.parseTables(content);
 
 		if (isGenHeader) {
 			// Roll all indented lines below
