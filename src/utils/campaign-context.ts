@@ -16,6 +16,9 @@ import {
 	selectCampaignFiles,
 } from "./campaign-content";
 
+/** How long to wait for further file changes before refreshing a view */
+const CAMPAIGN_REFRESH_DELAY_MS = 300;
+
 export interface Campaign extends CampaignContent<TFile> {
 	activeFile: TFile;
 	files: TFile[];
@@ -148,8 +151,11 @@ export function registerCampaignRefresh(
 	component: Component,
 	app: App,
 	getCampaign: () => Campaign | null,
-	refresh: () => void
+	onChange: () => void
 ): void {
+	const refresh = debounce(onChange, CAMPAIGN_REFRESH_DELAY_MS, true);
+	component.register(() => refresh.cancel());
+
 	const inCampaignFolder = (path: string): boolean => {
 		const campaign = getCampaign();
 		if (!campaign || campaign.scope === "file" || !path.endsWith(".md")) return false;
