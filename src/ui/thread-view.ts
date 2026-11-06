@@ -3,10 +3,9 @@
  * Displays all NPCs, locations, threads, and PCs with navigation
  */
 
-import { ItemView, WorkspaceLeaf } from "obsidian";
 import { t } from "../i18n/i18n";
-import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
-import LonelogPlugin from "../main";
+import { Campaign } from "../utils/campaign-context";
+import { LonelogView } from "./lonelog-view";
 import {
 	NotationParser,
 	ParsedElements,
@@ -16,16 +15,10 @@ import {
 
 export const THREAD_VIEW_TYPE = "lonelog-thread-view";
 
-export class ThreadBrowserView extends ItemView {
+export class ThreadBrowserView extends LonelogView {
 	private parsedElements: ParsedElements | null = null;
-	private campaign: Campaign | null = null;
-	private lastRefreshId: number = 0;
-	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
+	protected readonly containerClasses = ["lonelog-thread-container"];
 
 	getViewType(): string {
 		return THREAD_VIEW_TYPE;
@@ -39,45 +32,7 @@ export class ThreadBrowserView extends ItemView {
 		return "list";
 	}
 
-	onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass("lonelog-thread-container");
-
-		// Listen for active file changes
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				void this.refresh();
-			})
-		);
-
-		// Listen for file modifications
-		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
-
-		void this.refresh();
-		return Promise.resolve();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-
-		// Get active file
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
-
-		// If a new refresh has started, don't proceed with this one
-		if (refreshId !== this.lastRefreshId) return;
-
-		this.campaign = campaign;
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
 		this.parsedElements = NotationParser.parse(campaign.content);
 
 		// Render header
@@ -416,10 +371,6 @@ export class ThreadBrowserView extends ItemView {
 				});
 			});
 		}
-	}
-
-	private jumpToLine(line: number): void {
-		void openCampaignLine(this.app, this.campaign, line);
 	}
 
 	async onClose(): Promise<void> {

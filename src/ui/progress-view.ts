@@ -3,24 +3,17 @@
  * Displays and manages all progress elements (clocks, tracks, timers)
  */
 
-import { ItemView, WorkspaceLeaf } from "obsidian";
 import { NotationParser, ParsedProgress } from "../utils/parser";
-import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
+import { Campaign } from "../utils/campaign-context";
 import { resolveLine } from "../utils/campaign-content";
-import LonelogPlugin from "../main";
+import { LonelogView } from "./lonelog-view";
 
 export const PROGRESS_VIEW_TYPE = "lonelog-progress-view";
 
-export class ProgressTrackerView extends ItemView {
+export class ProgressTrackerView extends LonelogView {
 	private progressElements: ParsedProgress[] = [];
-	private campaign: Campaign | null = null;
-	private lastRefreshId: number = 0;
-	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
+	protected readonly containerClasses = ["lonelog-progress-container"];
 
 	getViewType(): string {
 		return PROGRESS_VIEW_TYPE;
@@ -34,44 +27,7 @@ export class ProgressTrackerView extends ItemView {
 		return "clock";
 	}
 
-	onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass("lonelog-progress-container");
-
-		// Listen for active file changes
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				void this.refresh();
-			})
-		);
-
-		// Listen for file modifications
-		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
-
-		void this.refresh();
-		return Promise.resolve();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-
-		// Get active file
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: "No active file",
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
-
-		if (refreshId !== this.lastRefreshId) return;
-
-		this.campaign = campaign;
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
 		const parsed = NotationParser.parse(campaign.content);
 		this.progressElements = parsed.progress;
 
@@ -194,10 +150,6 @@ export class ProgressTrackerView extends ItemView {
 		incrementBtn.addEventListener("click", () => {
 			void this.updateProgress(item, 1);
 		});
-	}
-
-	private jumpToLine(line: number): void {
-		void openCampaignLine(this.app, this.campaign, line);
 	}
 
 	/**

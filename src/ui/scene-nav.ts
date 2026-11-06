@@ -3,23 +3,16 @@
  * Displays an outline of all sessions and scenes for easy navigation
  */
 
-import { ItemView, WorkspaceLeaf } from "obsidian";
-import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
-import LonelogPlugin from "../main";
+import { Campaign } from "../utils/campaign-context";
+import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedSession, ParsedScene } from "../utils/parser";
 
 export const SCENE_NAV_TYPE = "lonelog-scene-nav";
 
-export class SceneNavigatorView extends ItemView {
+export class SceneNavigatorView extends LonelogView {
 	private sessions: ParsedSession[] = [];
-	private campaign: Campaign | null = null;
-	private lastRefreshId: number = 0;
-	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
+	protected readonly containerClasses = ["lonelog-scene-container"];
 
 	getViewType(): string {
 		return SCENE_NAV_TYPE;
@@ -33,45 +26,7 @@ export class SceneNavigatorView extends ItemView {
 		return "map";
 	}
 
-	onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass("lonelog-scene-container");
-
-		// Listen for active file changes
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				void this.refresh();
-			})
-		);
-
-		// Listen for file modifications
-		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
-
-		void this.refresh();
-		return Promise.resolve();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-
-		// Get active file
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: "No active file",
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
-
-		// If a new refresh has started, don't proceed with this one
-		if (refreshId !== this.lastRefreshId) return;
-
-		this.campaign = campaign;
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
 		const parsed = NotationParser.parse(campaign.content);
 		this.sessions = parsed.sessions;
 
@@ -180,10 +135,6 @@ export class SceneNavigatorView extends ItemView {
 		sceneBtn.addEventListener("click", () => {
 			this.jumpToLine(scene.line);
 		});
-	}
-
-	private jumpToLine(line: number): void {
-		void openCampaignLine(this.app, this.campaign, line);
 	}
 
 	async onClose(): Promise<void> {

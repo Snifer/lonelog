@@ -3,24 +3,18 @@
  * A dedicated sidebar view for tracking rooms and dungeon exploration.
  */
 
-import { ItemView, WorkspaceLeaf } from "obsidian";
-import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
-import LonelogPlugin from "../main";
+import { Campaign } from "../utils/campaign-context";
+import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedElements } from "../utils/parser";
 import { t } from "../i18n/i18n";
 
 export const DUNGEON_VIEW_TYPE = "lonelog-dungeon-view";
 
-export class DungeonStatusView extends ItemView {
+export class DungeonStatusView extends LonelogView {
 	private elements: ParsedElements | null = null;
-	private campaign: Campaign | null = null;
-	private lastRefreshId: number = 0;
-	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
+	// Reuse the same premium sidebar padding/styles
+	protected readonly containerClasses = ["lonelog-thread-container"];
 
 	getViewType(): string {
 		return DUNGEON_VIEW_TYPE;
@@ -34,34 +28,8 @@ export class DungeonStatusView extends ItemView {
 		return "map";
 	}
 
-	async onOpen(): Promise<void> {
-		this.registerEvent(this.app.workspace.on("active-leaf-change", () => void this.refresh()));
-		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
-		
-		await this.refresh();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-		container.addClass("lonelog-thread-container"); // Reuse the same premium sidebar padding/styles
-
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
-
-		if (refreshId !== this.lastRefreshId) return;
-
-		this.campaign = campaign;
-		this.elements = NotationParser.parse(this.campaign.content);
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		this.elements = NotationParser.parse(campaign.content);
 
 		const header = container.createDiv({ cls: "lonelog-thread-header" });
 		header.createEl("h4", { text: t("views.dungeon-header") });
@@ -108,9 +76,5 @@ export class DungeonStatusView extends ItemView {
 				exitsEl.createSpan({ text: room.exits.join(", "), cls: "ll-exits-list" });
 			}
 		});
-	}
-
-	private jumpToLine(line: number): void {
-		void openCampaignLine(this.app, this.campaign, line);
 	}
 }

@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 import LonelogPlugin from "./main";
 import { t, setLocale } from "./i18n/i18n";
 import { CAMPAIGN_SCOPES, type CampaignScope, isCampaignScope } from "./utils/campaign-content";
+import { refreshViews } from "./ui/lonelog-view";
 
 export interface LonelogSettings {
 	// Phase 1 settings
@@ -449,7 +450,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 						if (!isCampaignScope(value)) return;
 						this.plugin.settings.campaignScope = value;
 						await this.plugin.saveSettings();
-						this.plugin.refreshViews();
+						refreshViews(this.app);
 					});
 			});
 

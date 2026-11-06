@@ -1,21 +1,11 @@
-import { ItemView, WorkspaceLeaf } from "obsidian";
 import { NotationParser, ParsedCombatEncounter, ParsedCombatant } from "../utils/parser";
 import { t } from "../i18n/i18n";
-import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
-import LonelogPlugin from "../main";
+import { Campaign } from "../utils/campaign-context";
+import { LonelogView } from "./lonelog-view";
 
 export const COMBAT_VIEW_TYPE = "lonelog-combat-view";
 
-export class CombatTrackerView extends ItemView {
-	private campaign: Campaign | null = null;
-	private lastRefreshId: number = 0;
-	private plugin: LonelogPlugin;
-
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
-
+export class CombatTrackerView extends LonelogView {
 	getViewType(): string {
 		return COMBAT_VIEW_TYPE;
 	}
@@ -28,52 +18,22 @@ export class CombatTrackerView extends ItemView {
 		return "swords"; // Lucide icon for combat
 	}
 
-	async onOpen() {
-		await super.onOpen();
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => this.refresh())
-		);
-		registerCampaignRefresh(this, this.app, () => this.campaign, () => this.refresh());
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		const elements = NotationParser.parse(campaign.content);
 
-		this.refresh();
-	}
-
-	private refresh() {
-		const refreshId = ++this.lastRefreshId;
-		const activeFile = this.app.workspace.getActiveFile();
-		const container = this.contentEl;
-		container.empty();
-
-		if (!activeFile || activeFile.extension !== "md") {
+		if (elements.combat.length === 0) {
 			container.createDiv({
-				text: t("views.no-active-file"),
+				text: t("views.no-combat-encounters"),
 				cls: "lonelog-empty-state",
 			});
 			return;
 		}
 
-		// Read the campaign notes from the vault since the active leaf might not be an editor
-		void loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope).then((campaign) => {
-			// If a new refresh has started, don't proceed with this one
-			if (refreshId !== this.lastRefreshId) return;
-
-			this.campaign = campaign;
-			const elements = NotationParser.parse(campaign.content);
-			
-			if (elements.combat.length === 0) {
-				this.contentEl.createDiv({
-					text: t("views.no-combat-encounters"),
-					cls: "lonelog-empty-state",
-				});
-				return;
-			}
-
-			// Focus on the last active encounter
-			const activeEncounter = elements.combat[elements.combat.length - 1];
-			if (activeEncounter) {
-				this.renderEncounter(this.contentEl, activeEncounter);
-			}
-		});
+		// Focus on the last active encounter
+		const activeEncounter = elements.combat[elements.combat.length - 1];
+		if (activeEncounter) {
+			this.renderEncounter(container, activeEncounter);
+		}
 	}
 
 	private renderEncounter(
@@ -146,7 +106,7 @@ export class CombatTrackerView extends ItemView {
 			});
 			
 			nameBtn.onClickEvent(() => {
-				void openCampaignLine(this.app, this.campaign, c.line);
+				this.jumpToLine(c.line);
 			});
 
 			const statsRow = item.createDiv({ cls: "lonelog-combatant-stats" });

@@ -3,24 +3,17 @@
  * A dedicated sidebar view for tracking items, supplies, and wealth.
  */
 
-import { ItemView, WorkspaceLeaf } from "obsidian";
-import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
-import LonelogPlugin from "../main";
+import { Campaign } from "../utils/campaign-context";
+import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedElements, ParsedItem } from "../utils/parser";
 import { t } from "../i18n/i18n";
 
 export const RESOURCE_VIEW_TYPE = "lonelog-resource-view";
 
-export class ResourceStatusView extends ItemView {
+export class ResourceStatusView extends LonelogView {
 	private elements: ParsedElements | null = null;
-	private campaign: Campaign | null = null;
-	private lastRefreshId: number = 0;
-	private plugin: LonelogPlugin;
 
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
+	protected readonly containerClasses = ["lonelog-dashboard-container"];
 
 	getViewType(): string {
 		return RESOURCE_VIEW_TYPE;
@@ -34,34 +27,8 @@ export class ResourceStatusView extends ItemView {
 		return "coins";
 	}
 
-	async onOpen(): Promise<void> {
-		this.registerEvent(this.app.workspace.on("active-leaf-change", () => void this.refresh()));
-		registerCampaignRefresh(this, this.app, () => this.campaign, () => void this.refresh());
-		
-		await this.refresh();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-		container.addClass("lonelog-dashboard-container");
-
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
-
-		if (refreshId !== this.lastRefreshId) return;
-
-		this.campaign = campaign;
-		this.elements = NotationParser.parse(this.campaign.content);
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		this.elements = NotationParser.parse(campaign.content);
 
 		const header = container.createDiv({ cls: "ll-dashboard-header", attr: { style: "padding: 0 10px;" } });
 		header.createEl("h3", { text: t("views.resources-header") });
@@ -141,9 +108,5 @@ export class ResourceStatusView extends ItemView {
 	        const qtyEl = main.createDiv({ cls: "ll-resource-qty" });
 	        qtyEl.setText(item.quantity);
 	    }
-	}
-
-	private jumpToLine(line: number): void {
-		void openCampaignLine(this.app, this.campaign, line);
 	}
 }

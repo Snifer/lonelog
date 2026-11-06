@@ -272,6 +272,7 @@ export default {
 		"story-header": "Story elements",
 		"scene-nav-header": "Scene navigator",
 		"no-active-file": "No active file",
+		"load-failed": "Could not read the campaign files",
 		"open-file-failed": "Could not open the file",
 		"no-sessions": "No sessions found. Use 'insert session header' to create one.",
 		"no-progress": "No progress elements found",

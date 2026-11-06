@@ -587,29 +587,6 @@ export default class LonelogPlugin extends Plugin {
 		run(context);
 	}
 
-	/**
-	 * Re-render all open Lonelog views, e.g. after the campaignScope setting changed
-	 */
-	refreshViews(): void {
-		const viewTypes = [
-			COMBAT_VIEW_TYPE,
-			DASHBOARD_VIEW_TYPE,
-			DUNGEON_VIEW_TYPE,
-			PARTYLOG_DASHBOARD_VIEW_TYPE,
-			PROGRESS_VIEW_TYPE,
-			RESOURCE_VIEW_TYPE,
-			SCENE_NAV_TYPE,
-			THREAD_VIEW_TYPE,
-		];
-		viewTypes.forEach((viewType) => {
-			this.app.workspace.getLeavesOfType(viewType).forEach((leaf) => {
-				// Call refresh() an any View object that has such a method
-				const view = leaf.view as { refresh?: () => unknown };
-				void view.refresh?.();
-			});
-		});
-	}
-
 	async activateView(viewType: string) {
 		const { workspace } = this.app;
 

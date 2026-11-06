@@ -3,27 +3,20 @@
  * A unified, premium interface for managing all campaign elements in one place.
  */
 
-import { ItemView, WorkspaceLeaf, debounce } from "obsidian";
-import { Campaign, getCampaignTitle, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
+import { Campaign, getCampaignTitle } from "../utils/campaign-context";
 import { NotationParser, ParsedElements } from "../utils/parser";
 import { t } from "../i18n/i18n";
-import LonelogPlugin from "../main";
+import { LonelogView } from "./lonelog-view";
 
 export const DASHBOARD_VIEW_TYPE = "lonelog-dashboard";
 
-export class DashboardView extends ItemView {
-	private campaign: Campaign | null = null;
-	private lastRefreshId: number = 0;
+export class DashboardView extends LonelogView {
 	private elements: ParsedElements | null = null;
-	private plugin: LonelogPlugin;
+
+	protected readonly containerClasses = ["lonelog-dashboard-container"];
 
 	// Debounced refresh to save performance during rapid editing
-	private debouncedRefresh = debounce(() => this.refresh(), 500, true);
-
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
+	protected readonly refreshDelayMs = 500;
 
 	getViewType(): string {
 		return DASHBOARD_VIEW_TYPE;
@@ -37,48 +30,11 @@ export class DashboardView extends ItemView {
 		return "layout-dashboard";
 	}
 
-	onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass("lonelog-dashboard-container");
-
-		// Listen for active file changes
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				this.debouncedRefresh();
-			})
-		);
-
-		// Listen for file modifications
-		registerCampaignRefresh(this, this.app, () => this.campaign, () => this.debouncedRefresh());
-
-		this.debouncedRefresh();
-		return Promise.resolve();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		const campaign = await loadCampaign(this.app, activeFile, this.plugin.settings.campaignScope);
-
-		// If a new refresh has started, don't proceed with this one
-		if (refreshId !== this.lastRefreshId) return;
-
-		this.campaign = campaign;
-		this.elements = NotationParser.parse(this.campaign.content);
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		this.elements = NotationParser.parse(campaign.content);
 
 		// --- HEADER ---
-		this.renderHeader(container, getCampaignTitle(this.app, this.campaign));
+		this.renderHeader(container, getCampaignTitle(this.app, campaign));
 
 		// --- MAIN GRID ---
 		const grid = container.createDiv({ cls: "ll-dashboard-grid" });
@@ -304,11 +260,6 @@ export class DashboardView extends ItemView {
 				item.addEventListener("click", () => this.jumpToLine(npc.lastMention));
 			});
 		}
-	}
-
-
-	private jumpToLine(line: number): void {
-		void openCampaignLine(this.app, this.campaign, line);
 	}
 
 	async onClose(): Promise<void> {
