@@ -1,4 +1,4 @@
-import { Campaign, getCampaignTitle } from "../utils/campaign-context";
+import { Campaign, getCampaignTitle } from "../utils/campaign";
 import { t } from "../i18n/i18n";
 import { LonelogView } from "./lonelog-view";
 import {

@@ -3,7 +3,7 @@
  * A dedicated sidebar view for tracking items, supplies, and wealth.
  */
 
-import { Campaign } from "../utils/campaign-context";
+import { Campaign } from "../utils/campaign";
 import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedElements, ParsedItem } from "../utils/parser";
 import { t } from "../i18n/i18n";

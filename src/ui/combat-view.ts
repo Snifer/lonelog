@@ -1,6 +1,6 @@
 import { NotationParser, ParsedCombatEncounter, ParsedCombatant } from "../utils/parser";
 import { t } from "../i18n/i18n";
-import { Campaign } from "../utils/campaign-context";
+import { Campaign } from "../utils/campaign";
 import { LonelogView } from "./lonelog-view";
 
 export const COMBAT_VIEW_TYPE = "lonelog-combat-view";

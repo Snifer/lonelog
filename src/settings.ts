@@ -1,8 +1,8 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import LonelogPlugin from "./main";
 import { t, setLocale } from "./i18n/i18n";
-import { CAMPAIGN_SCOPES, type CampaignScope, isCampaignScope } from "./utils/campaign-content";
 import { refreshViews } from "./ui/lonelog-view";
+import { CAMPAIGN_SCOPES, CampaignScope, isCampaignScope } from "./utils/campaign";
 
 export interface LonelogSettings {
 	// Phase 1 settings

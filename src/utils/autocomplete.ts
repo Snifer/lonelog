@@ -13,7 +13,7 @@ import {
 	TFile,
 } from "obsidian";
 import { NotationParser, ParsedElements } from "./parser";
-import { loadEditorContext } from "./campaign-context";
+import { loadEditorContext } from "./campaign";
 import type { LonelogSettings } from "../settings";
 
 interface TagSuggestion {

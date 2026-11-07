@@ -11,7 +11,7 @@ import { CardRoller } from "./card-roller";
 import { TableResolver } from "./table-resolver";
 import { RollManager } from "./roll-manager";
 import { LonelogSettings } from "../settings";
-import { loadEditorContext } from "./campaign-context";
+import { loadEditorContext } from "./campaign";
 
 function asString(value: unknown): string {
 	return typeof value === "string" ? value : typeof value === "number" || typeof value === "boolean" ? String(value) : "";

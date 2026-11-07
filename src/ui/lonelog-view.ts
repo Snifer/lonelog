@@ -7,7 +7,7 @@
 
 import { App, ItemView, WorkspaceLeaf, debounce } from "obsidian";
 import { t } from "../i18n/i18n";
-import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign-context";
+import { Campaign, loadCampaign, openCampaignLine, registerCampaignRefresh } from "../utils/campaign";
 import type LonelogPlugin from "../main";
 
 export abstract class LonelogView extends ItemView {

@@ -3,7 +3,7 @@
  * A unified, premium interface for managing all campaign elements in one place.
  */
 
-import { Campaign, getCampaignTitle } from "../utils/campaign-context";
+import { Campaign, getCampaignTitle } from "../utils/campaign";
 import { NotationParser, ParsedElements } from "../utils/parser";
 import { t } from "../i18n/i18n";
 import { LonelogView } from "./lonelog-view";

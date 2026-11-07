@@ -5,7 +5,7 @@ import {
 	lineOffsetOf,
 	resolveLine,
 	selectCampaignFiles,
-} from "../src/utils/campaign-content";
+} from "../src/utils/campaign";
 import { NotationParser } from "../src/utils/parser";
 
 describe("Campaign content", () => {

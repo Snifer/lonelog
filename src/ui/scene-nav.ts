@@ -3,7 +3,7 @@
  * Displays an outline of all sessions and scenes for easy navigation
  */
 
-import { Campaign } from "../utils/campaign-context";
+import { Campaign } from "../utils/campaign";
 import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedSession, ParsedScene } from "../utils/parser";
 

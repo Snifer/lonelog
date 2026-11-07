@@ -4,7 +4,7 @@ import { TrackModal } from "./templates";
 import { TableResolver, TableDefinition } from "../utils/table-resolver";
 import { RollManager } from "../utils/roll-manager";
 import { CardRoller } from "../utils/card-roller";
-import type { EditorContext } from "../utils/campaign-context";
+import type { EditorContext } from "../utils/campaign";
 
 export class NotationCommands {
 	// Single symbol insertions

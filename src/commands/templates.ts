@@ -1,5 +1,5 @@
 import { App, Editor, Modal, Setting } from "obsidian";
-import type { EditorContext } from "../utils/campaign-context";
+import type { EditorContext } from "../utils/campaign";
 
 // Campaign Header Modal and related types
 export interface CampaignHeaderData {

@@ -4,7 +4,7 @@
  */
 
 import { t } from "../i18n/i18n";
-import { Campaign } from "../utils/campaign-context";
+import { Campaign } from "../utils/campaign";
 import { LonelogView } from "./lonelog-view";
 import {
 	NotationParser,

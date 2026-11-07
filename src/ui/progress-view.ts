@@ -4,8 +4,7 @@
  */
 
 import { NotationParser, ParsedProgress } from "../utils/parser";
-import { Campaign } from "../utils/campaign-context";
-import { resolveLine } from "../utils/campaign-content";
+import { Campaign, resolveLine } from "../utils/campaign";
 import { LonelogView } from "./lonelog-view";
 
 export const PROGRESS_VIEW_TYPE = "lonelog-progress-view";

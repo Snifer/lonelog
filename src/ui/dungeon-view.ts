@@ -3,7 +3,7 @@
  * A dedicated sidebar view for tracking rooms and dungeon exploration.
  */
 
-import { Campaign } from "../utils/campaign-context";
+import { Campaign } from "../utils/campaign";
 import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedElements } from "../utils/parser";
 import { t } from "../i18n/i18n";

@@ -18,7 +18,7 @@ import { PartylogDashboardView, PARTYLOG_DASHBOARD_VIEW_TYPE } from "./ui/partyl
 import { lonelogBlockProcessor, lonelogGlobalProcessor } from "./utils/reading-highlighter";
 import { lonelogEditorPlugin } from "./utils/editor-highlighter";
 import { createLonelogApi, type LonelogApi } from "./api";
-import { EditorContext, loadEditorContext, singleFileContext } from "./utils/campaign-context";
+import { EditorContext, loadEditorContext, singleFileContext } from "./utils/campaign";
 
 export default class LonelogPlugin extends Plugin {
 	settings: LonelogSettings;
