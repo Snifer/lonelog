@@ -19,10 +19,10 @@ describe("Campaign content", () => {
 
 		expect(campaign.content).toBe("one\ntwo\nthree\n\n\nfour");
 		expect(campaign.segments).toEqual([
-			{ file: "a", startLine: 0, lineCount: 2 },
-			{ file: "b", startLine: 2, lineCount: 2 },
-			{ file: "c", startLine: 4, lineCount: 1 },
-			{ file: "d", startLine: 5, lineCount: 1 },
+			{ file: "a", startLine: 0, lineOffset: 0, lineCount: 2 },
+			{ file: "b", startLine: 2, lineOffset: 0, lineCount: 2 },
+			{ file: "c", startLine: 4, lineOffset: 0, lineCount: 1 },
+			{ file: "d", startLine: 5, lineOffset: 0, lineCount: 1 },
 		]);
 	});
 
@@ -65,6 +65,68 @@ describe("Campaign content", () => {
 		expect(parsed.wealth.get("Gold")).toBe("15");
 		expect(parsed.npcs.has("Jonah")).toBe(true);
 		expect(parsed.sessions.map((s) => s.number)).toEqual([1, 2]);
+	});
+});
+
+describe("Campaign frontmatter", () => {
+	test("strips frontmatter from all notes", () =>{
+		const { content } = buildCampaignContent([
+			{ file: "a", content: "---\nfront: matter\n---\none\ntwo" },
+			{ file: "a", content: "---\nfront: matter\nanother: one\n---\nthree\nfour" },
+			{ file: "b", content: "---\n---\nfive" },
+			{ file: "c", content: "---\n\n\n\n---\nsix" },
+			{ file: "e", content: "seven" },
+		]);
+
+		expect(content).toEqual(
+			"one\ntwo\n" +
+			"three\nfour\n" +
+			"five\n" +
+			"six\n" +
+			"seven"
+		);
+	});
+
+	test("extracts frontmatter from notes", () => {
+		const fileContent =
+			`---
+title: test campaign
+---
+
+one
+two
+three`;
+		const { frontmatter, content } = buildCampaignContent([
+			{ file: "a", content: fileContent },
+		]);
+
+		expect(frontmatter).toEqual({ title: "test campaign" });
+		expect(content).toEqual("\none\ntwo\nthree");
+	});
+
+	test("extracts only first occurrence of title in frontmatter", () => {
+		const parts = [
+			{ file: "a", content: "no frontmatter" },
+			{ file: "b", content: "---\nfront: matter\n---\nfrontmatter but no title, expect empty frontmatter returned" },
+			{ file: "c", content: "---\ntitle: first occurrence\n---\nfrontmatter with title" },
+			{ file: "d", content: "again no frontmatter, shouldn't affect anything" },
+			{ file: "e", content: "---\ntitle: second occurrence\n---\nanother frontmatter with title, should be ignored" },
+		]
+
+		const expectedFrontmatter = [
+			{},
+			{},
+			{ title: "first occurrence" },
+			{ title: "first occurrence" },
+			{ title: "first occurrence" },
+		]
+
+		expect(parts.length).toEqual(expectedFrontmatter.length);
+
+		parts.forEach((_, index) => {
+			const { frontmatter } = buildCampaignContent(parts.slice(0, index + 1));
+			expect(frontmatter).toEqual(expectedFrontmatter[index]);
+		})
 	});
 });
 

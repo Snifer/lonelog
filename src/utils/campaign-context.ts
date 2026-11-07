@@ -106,6 +106,7 @@ export async function loadEditorContext(
  * The campaign's display name, either the campaign folder name or the single file name
  */
 export function getCampaignTitle(app: App, campaign: Campaign): string {
+	if (campaign.frontmatter.title !== undefined) return campaign.frontmatter.title;
 	if (campaign.scope === "file") return campaign.activeFile.basename;
 	const folder = campaign.activeFile.parent;
 	if (!folder) return campaign.activeFile.basename;

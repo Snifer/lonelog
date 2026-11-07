@@ -1,7 +1,7 @@
 import { App, TFile, Notice } from "obsidian";
 import { LonelogSettings } from "../settings";
 
-interface LonelogFrontmatter {
+export interface LonelogFrontmatter {
     title?: string;
     ruleset?: string;
     genre?: string;

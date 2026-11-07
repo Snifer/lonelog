@@ -4,6 +4,9 @@
  * across files, and maps line numbers of that document back to the original files.
  */
 
+import { getFrontMatterInfo, parseYaml } from "obsidian";
+import { LonelogFrontmatter } from "../commands/frontmatter";
+
 /**
  * Which file(s) are considered as the campaign content:
  * - "file": only the active file
@@ -31,10 +34,12 @@ export type CampaignContentMode = "view" | "edit";
 export interface CampaignSegment<T> {
 	file: T;
 	startLine: number;
+	lineOffset: number;
 	lineCount: number;
 }
 
 export interface CampaignContent<T> {
+	frontmatter: LonelogFrontmatter;
 	content: string;
 	segments: CampaignSegment<T>[];
 }
@@ -42,21 +47,38 @@ export interface CampaignContent<T> {
 /**
  * Join campaign file contents together and record each file's
  * starting line number within the resulting combined document.
+ * Extract frontmatter information for campaign metadata.
  */
 export function buildCampaignContent<T>(
 	parts: Array<{ file: T; content: string }>
 ): CampaignContent<T> {
 	const segments: CampaignSegment<T>[] = [];
+	const contents: string[] = []
+	let frontmatter: LonelogFrontmatter = {}
+	let content = "";
 	let startLine = 0;
 
 	for (const part of parts) {
-		const lineCount = part.content.split("\n").length;
-		segments.push({ file: part.file, startLine, lineCount });
+		const frontmatterInfo = getFrontMatterInfo(part.content);
+		if (frontmatterInfo.exists && !frontmatter?.title) {
+			// parse *any* frontmatter as long as there's no title set yet
+			frontmatter = parseYaml(frontmatterInfo.frontmatter);
+		}
+
+		// strip frontmatter from the content
+		content = part.content.substring(frontmatterInfo.contentStart);
+		contents.push(content)
+
+		const lineCount = content.split("\n").length;
+		const lineOffset = part.content.split("\n").length - lineCount;
+
+		segments.push({ file: part.file, startLine, lineOffset, lineCount });
 		startLine += lineCount;
 	}
 
 	return {
-		content: parts.map((part) => part.content).join("\n"),
+		frontmatter: frontmatter?.title ? frontmatter : {},
+		content: contents.join("\n"),
 		segments,
 	};
 }
@@ -70,7 +92,7 @@ export function resolveLine<T>(
 ): { file: T; line: number } | null {
 	for (const segment of segments) {
 		if (line >= segment.startLine && line < segment.startLine + segment.lineCount) {
-			return { file: segment.file, line: line - segment.startLine };
+			return { file: segment.file, line: line - segment.startLine + segment.lineOffset };
 		}
 	}
 	return null;
