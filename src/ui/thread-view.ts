@@ -3,8 +3,9 @@
  * Displays all NPCs, locations, threads, and PCs with navigation
  */
 
-import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import { t } from "../i18n/i18n";
+import { Campaign } from "../utils/campaign";
+import { LonelogView } from "./lonelog-view";
 import {
 	NotationParser,
 	ParsedElements,
@@ -14,14 +15,10 @@ import {
 
 export const THREAD_VIEW_TYPE = "lonelog-thread-view";
 
-export class ThreadBrowserView extends ItemView {
+export class ThreadBrowserView extends LonelogView {
 	private parsedElements: ParsedElements | null = null;
-	private currentFile: TFile | null = null;
-	private lastRefreshId: number = 0;
 
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
+	protected readonly containerClasses = ["lonelog-thread-container"];
 
 	getViewType(): string {
 		return THREAD_VIEW_TYPE;
@@ -35,54 +32,8 @@ export class ThreadBrowserView extends ItemView {
 		return "list";
 	}
 
-	onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass("lonelog-thread-container");
-
-		// Listen for active file changes
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				void this.refresh();
-			})
-		);
-
-		// Listen for file modifications
-		this.registerEvent(
-			this.app.vault.on("modify", (file) => {
-				if (file === this.currentFile) {
-					void this.refresh();
-				}
-			})
-		);
-
-		void this.refresh();
-		return Promise.resolve();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-
-		// Get active file
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		this.currentFile = activeFile;
-
-		// Read and parse file
-		const content = await this.app.vault.read(activeFile);
-
-		// If a new refresh has started, don't proceed with this one
-		if (refreshId !== this.lastRefreshId) return;
-
-		this.parsedElements = NotationParser.parse(content);
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		this.parsedElements = NotationParser.parse(campaign.content);
 
 		// Render header
 		const header = container.createDiv({
@@ -420,22 +371,6 @@ export class ThreadBrowserView extends ItemView {
 				});
 			});
 		}
-	}
-
-	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView(
-					{ from: { line, ch: 0 }, to: { line, ch: 0 } },
-					true
-				);
-			}
-		});
 	}
 
 	async onClose(): Promise<void> {

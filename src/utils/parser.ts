@@ -103,6 +103,11 @@ export class NotationParser {
 		result: ParsedElements;
 	} | null = null;
 
+	private static lineStarts: {
+		content: string;
+		positions: number[];
+	} | null = null;
+
 	/**
 	 * Parse all Lonelog notation elements from content
 	 * Results are cached based on content hash
@@ -139,6 +144,7 @@ export class NotationParser {
 	 */
 	static clearCache(): void {
 		this.cache = null;
+		this.lineStarts = null;
 	}
 
 	/**
@@ -1217,8 +1223,32 @@ export class NotationParser {
 	 * Get line number from character index
 	 */
 	private static getLineNumber(content: string, index: number): number {
-		const upToIndex = content.substring(0, index);
-		return upToIndex.split("\n").length - 1;
+		// Find and cache all the line start positions once for the current content
+		if (!this.lineStarts || this.lineStarts.content !== content) {
+			const positions = [0];
+			let pos = content.indexOf("\n");
+			while (pos !== -1) {
+				pos++; // we got the line break, so actual line *start* is the next position
+				positions.push(pos);
+				pos = content.indexOf("\n", pos);
+			}
+			this.lineStarts = { content, positions };
+		}
+
+		// Get the line start position before or at the given match index from the positions array.
+		// Since the array is automatically sorted low to high, binary search works nicely here.
+		const positions = this.lineStarts.positions;
+		let low = 0;
+		let high = positions.length - 1;
+		while (low < high) {
+			const mid = (low + high + 1) >> 1;
+			if (positions[mid]! <= index) {
+				low = mid;
+			} else {
+				high = mid - 1;
+			}
+		}
+		return low;
 	}
 
 	/**

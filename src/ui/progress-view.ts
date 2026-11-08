@@ -3,19 +3,16 @@
  * Displays and manages all progress elements (clocks, tracks, timers)
  */
 
-import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import { NotationParser, ParsedProgress } from "../utils/parser";
+import { Campaign, resolveLine } from "../utils/campaign";
+import { LonelogView } from "./lonelog-view";
 
 export const PROGRESS_VIEW_TYPE = "lonelog-progress-view";
 
-export class ProgressTrackerView extends ItemView {
+export class ProgressTrackerView extends LonelogView {
 	private progressElements: ParsedProgress[] = [];
-	private currentFile: TFile | null = null;
-	private lastRefreshId: number = 0;
 
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
+	protected readonly containerClasses = ["lonelog-progress-container"];
 
 	getViewType(): string {
 		return PROGRESS_VIEW_TYPE;
@@ -29,54 +26,8 @@ export class ProgressTrackerView extends ItemView {
 		return "clock";
 	}
 
-	onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass("lonelog-progress-container");
-
-		// Listen for active file changes
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				void this.refresh();
-			})
-		);
-
-		// Listen for file modifications
-		this.registerEvent(
-			this.app.vault.on("modify", (file) => {
-				if (file === this.currentFile) {
-					void this.refresh();
-				}
-			})
-		);
-
-		void this.refresh();
-		return Promise.resolve();
-	}
-
-	async refresh(): Promise<void> {
-		const refreshId = ++this.lastRefreshId;
-		const container = this.contentEl;
-		container.empty();
-
-		// Get active file
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: "No active file",
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		this.currentFile = activeFile;
-
-		// Read and parse file
-		const content = await this.app.vault.read(activeFile);
-		
-		// If a new refresh has started, don't proceed with this one
-		if (refreshId !== this.lastRefreshId) return;
-
-		const parsed = NotationParser.parse(content);
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		const parsed = NotationParser.parse(campaign.content);
 		this.progressElements = parsed.progress;
 
 		// Render header
@@ -200,22 +151,6 @@ export class ProgressTrackerView extends ItemView {
 		});
 	}
 
-	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView(
-					{ from: { line, ch: 0 }, to: { line, ch: 0 } },
-					true
-				);
-			}
-		});
-	}
-
 	/**
 	 * Format a number for display: drops unnecessary trailing zeros
 	 * but preserves fractional precision (e.g. 1.5 stays "1.5", 2 stays "2").
@@ -228,14 +163,18 @@ export class ProgressTrackerView extends ItemView {
 		item: ParsedProgress,
 		delta: number
 	): Promise<void> {
-		if (!this.currentFile) return;
+		if (!this.campaign) return;
 
-		const content = await this.app.vault.read(this.currentFile);
+		// Find the file and line the item was parsed from
+		const target = resolveLine(this.campaign.segments, item.line);
+		if (!target) return;
+
+		const content = await this.app.vault.read(target.file);
 		const lines = content.split("\n");
 
 		// Find and update the line
-		if (item.line < lines.length) {
-			const line = lines[item.line];
+		if (target.line < lines.length) {
+			const line = lines[target.line];
 			if (!line) return;
 			const newCurrent = Math.max(0, parseFloat((item.current + delta).toFixed(4)));
 
@@ -268,8 +207,8 @@ export class ProgressTrackerView extends ItemView {
 				);
 			}
 
-			lines[item.line] = newLine;
-			await this.app.vault.modify(this.currentFile, lines.join("\n"));
+			lines[target.line] = newLine;
+			await this.app.vault.modify(target.file, lines.join("\n"));
 
 			// Refresh view
 			void this.refresh();

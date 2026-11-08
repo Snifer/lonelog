@@ -404,4 +404,41 @@ describe('NotationParser', () => {
 	    expect(item?.slotParent).toBe('Slot 2');
 	    expect(item?.properties).toContain('cracked');
 	});
+
+	describe('line numbers', () => {
+		const mentionLines = (content: string, npc: string) =>
+			NotationParser.parse(content).npcs.get(npc)?.mentions;
+
+		test('numbers lines from zero, including a tag at the very start of the content', () => {
+			expect(mentionLines('[N:Jonah]', 'Jonah')).toEqual([0]);
+			expect(mentionLines('[N:Jonah]\ntext\n[N:Jonah]', 'Jonah')).toEqual([0, 2]);
+		});
+
+		test('counts blank lines and the last line without a trailing newline', () => {
+			const content = '\n\n[N:Jonah]\n\n\n[N:Jonah]';
+			expect(mentionLines(content, 'Jonah')).toEqual([2, 5]);
+		});
+
+		test('counts lines the same way as splitting on newlines', () => {
+			const lines = Array.from({ length: 50 }, (_, i) => (i % 7 === 0 ? `[N:Jonah] line ${i}` : `line ${i}`));
+			const expected = lines.flatMap((line, i) => (line.startsWith('[N:Jonah]') ? [i] : []));
+			expect(mentionLines(lines.join('\n'), 'Jonah')).toEqual(expected);
+		});
+
+		test('still counts lines by \\n when the content has CRLF line endings', () => {
+			expect(mentionLines('[N:Jonah]\r\ntext\r\n[N:Jonah]', 'Jonah')).toEqual([0, 2]);
+		});
+
+		test('does not reuse line positions from the previously parsed content', () => {
+			expect(mentionLines('\n\n\n\n[N:Jonah]', 'Jonah')).toEqual([4]);
+			expect(mentionLines('[N:Jonah]\n\n\n\n\n\n\n', 'Jonah')).toEqual([0]);
+		});
+
+		test('numbers lines correctly again after the parser cache was cleared', () => {
+			const content = 'a\nb\n[N:Jonah]';
+			expect(mentionLines(content, 'Jonah')).toEqual([2]);
+			NotationParser.clearCache();
+			expect(mentionLines(content, 'Jonah')).toEqual([2]);
+		});
+	});
 });

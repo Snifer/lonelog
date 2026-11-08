@@ -1,14 +1,11 @@
-import { ItemView, WorkspaceLeaf, TFile } from "obsidian";
 import { NotationParser, ParsedCombatEncounter, ParsedCombatant } from "../utils/parser";
 import { t } from "../i18n/i18n";
+import { Campaign } from "../utils/campaign";
+import { LonelogView } from "./lonelog-view";
 
 export const COMBAT_VIEW_TYPE = "lonelog-combat-view";
 
-export class CombatTrackerView extends ItemView {
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
-
+export class CombatTrackerView extends LonelogView {
 	getViewType(): string {
 		return COMBAT_VIEW_TYPE;
 	}
@@ -21,53 +18,27 @@ export class CombatTrackerView extends ItemView {
 		return "swords"; // Lucide icon for combat
 	}
 
-	async onOpen() {
-		await super.onOpen();
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => this.update())
-		);
-		this.registerEvent(this.app.vault.on("modify", () => this.update()));
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		const elements = NotationParser.parse(campaign.content);
 
-		this.update();
-	}
-
-	private update() {
-		const activeFile = this.app.workspace.getActiveFile();
-		const container = this.contentEl;
-		container.empty();
-
-		if (!activeFile || activeFile.extension !== "md") {
+		if (elements.combat.length === 0) {
 			container.createDiv({
-				text: t("views.no-active-file"),
+				text: t("views.no-combat-encounters"),
 				cls: "lonelog-empty-state",
 			});
 			return;
 		}
 
-		// Use the vault to read file content since it might not be the active leaf's editor
-		void this.app.vault.read(activeFile).then((content) => {
-			const elements = NotationParser.parse(content);
-			
-			if (elements.combat.length === 0) {
-				this.contentEl.createDiv({
-					text: t("views.no-combat-encounters"),
-					cls: "lonelog-empty-state",
-				});
-				return;
-			}
-
-			// Focus on the last active encounter
-			const activeEncounter = elements.combat[elements.combat.length - 1];
-			if (activeEncounter) {
-				this.renderEncounter(this.contentEl, activeEncounter, activeFile);
-			}
-		});
+		// Focus on the last active encounter
+		const activeEncounter = elements.combat[elements.combat.length - 1];
+		if (activeEncounter) {
+			this.renderEncounter(container, activeEncounter);
+		}
 	}
 
 	private renderEncounter(
 		container: Element,
-		encounter: ParsedCombatEncounter,
-		file: TFile
+		encounter: ParsedCombatEncounter
 	) {
 		const combatContainer = container.createDiv({
 			cls: "lonelog-combat-container",
@@ -105,19 +76,18 @@ export class CombatTrackerView extends ItemView {
 		const foes = combatants.filter(c => c.type === "foe");
 
 		if (pcs.length > 0) {
-			this.renderSection(roster, t("views.party"), pcs, file);
+			this.renderSection(roster, t("views.party"), pcs);
 		}
 
 		if (foes.length > 0) {
-			this.renderSection(roster, t("views.foes"), foes, file);
+			this.renderSection(roster, t("views.foes"), foes);
 		}
 	}
 
 	private renderSection(
 		parent: Element,
 		title: string,
-		list: ParsedCombatant[],
-		file: TFile
+		list: ParsedCombatant[]
 	) {
 		const section = parent.createDiv({ cls: "lonelog-combat-section" });
 		section.createEl("h5", { text: title });
@@ -136,7 +106,7 @@ export class CombatTrackerView extends ItemView {
 			});
 			
 			nameBtn.onClickEvent(() => {
-				void this.jumpToLine(file, c.line);
+				this.jumpToLine(c.line);
 			});
 
 			const statsRow = item.createDiv({ cls: "lonelog-combatant-stats" });
@@ -144,12 +114,5 @@ export class CombatTrackerView extends ItemView {
 				statsRow.createSpan({ text: stat, cls: "lonelog-stat-tag" });
 			});
 		});
-	}
-
-	private async jumpToLine(file: TFile, line: number) {
-		const leaf = this.app.workspace.getMostRecentLeaf();
-		if (leaf) {
-			await leaf.openFile(file, { eState: { line } });
-		}
 	}
 }

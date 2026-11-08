@@ -1,6 +1,6 @@
-import { ItemView, TFile, WorkspaceLeaf, debounce } from "obsidian";
+import { Campaign, getCampaignTitle } from "../utils/campaign";
 import { t } from "../i18n/i18n";
-import LonelogPlugin from "../main";
+import { LonelogView } from "./lonelog-view";
 import {
 	PartylogParsedDocument,
 	PartylogParser,
@@ -12,16 +12,12 @@ export const PARTYLOG_DASHBOARD_VIEW_TYPE = "lonelog-partylog-dashboard";
 
 type PartylogTab = "overview" | "scenes" | "threads" | "timeline" | "roster" | "recap";
 
-export class PartylogDashboardView extends ItemView {
-	private currentFile: TFile | null = null;
-	private plugin: LonelogPlugin;
+export class PartylogDashboardView extends LonelogView {
 	private activeTab: PartylogTab = "overview";
-	private debouncedRefresh = debounce(() => this.refresh(), 300, true);
 
-	constructor(leaf: WorkspaceLeaf, plugin: LonelogPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
+	protected readonly containerClasses = ["lonelog-dashboard-container", "lonelog-partylog-dashboard"];
+
+	protected readonly refreshDelayMs = 300;
 
 	getViewType(): string {
 		return PARTYLOG_DASHBOARD_VIEW_TYPE;
@@ -35,53 +31,18 @@ export class PartylogDashboardView extends ItemView {
 		return "users";
 	}
 
-	onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass("lonelog-dashboard-container");
-		this.contentEl.addClass("lonelog-partylog-dashboard");
+	protected renderBlocked(container: HTMLElement): boolean {
+		if (this.plugin.settings.enablePartylogAddon) return false;
 
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				this.debouncedRefresh();
-			})
-		);
-
-		this.registerEvent(
-			this.app.vault.on("modify", (file) => {
-				if (file === this.currentFile) {
-					this.debouncedRefresh();
-				}
-			})
-		);
-
-		this.debouncedRefresh();
-		return Promise.resolve();
+		container.createEl("h1", { text: t("views.partylog-dashboard-title") });
+		container.createEl("p", { text: t("views.partylog-addon-disabled") });
+		return true;
 	}
 
-	async refresh(): Promise<void> {
-		const container = this.contentEl;
-		container.empty();
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		const parsed = PartylogParser.parse(campaign.content);
 
-		if (!this.plugin.settings.enablePartylogAddon) {
-			container.createEl("h1", { text: t("views.partylog-dashboard-title") });
-			container.createEl("p", { text: t("views.partylog-addon-disabled") });
-			return;
-		}
-
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		this.currentFile = activeFile;
-		const content = await this.app.vault.read(activeFile);
-		const parsed = PartylogParser.parse(content);
-
-		this.renderHeader(container, activeFile.basename, parsed);
+		this.renderHeader(container, getCampaignTitle(this.app, campaign), parsed);
 
 		if (!parsed.hasPartylogBlocks) {
 			const empty = container.createDiv({ cls: "ll-dashboard-section" });
@@ -701,22 +662,6 @@ export class PartylogDashboardView extends ItemView {
 
 	private truncate(text: string, max = 120): string {
 		return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
-	}
-
-	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView(
-					{ from: { line, ch: 0 }, to: { line, ch: 0 } },
-					true
-				);
-			}
-		});
 	}
 
 	private createStatCard(container: HTMLElement, label: string, value: string): void {

@@ -1,6 +1,8 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import LonelogPlugin from "./main";
 import { t, setLocale } from "./i18n/i18n";
+import { refreshViews } from "./ui/lonelog-view";
+import { CAMPAIGN_SCOPES, CampaignScope, isCampaignScope } from "./utils/campaign";
 
 export interface LonelogSettings {
 	// Phase 1 settings
@@ -71,6 +73,9 @@ export interface LonelogSettings {
 	tokenFontWeight: string;  // Boldness for tokens
 	blockFontFamily: string; // Font family for the codeblocks
 	blockFontSize: string; // Font size for the codeblocks
+
+	// Campaign settings
+	campaignScope: CampaignScope; // Campaign files: active file, whole folder, or folder up to the active file
 }
 
 export const DEFAULT_SETTINGS: LonelogSettings = {
@@ -138,6 +143,7 @@ export const DEFAULT_SETTINGS: LonelogSettings = {
 	tokenFontWeight: "normal",
 	blockFontFamily: "",
 	blockFontSize: "",
+	campaignScope: "file",
 };
 
 /** Sets Lonelog CSS custom properties on document.body */
@@ -239,7 +245,7 @@ interface ColorDef {
 	desc: string;
 }
 
-type SettingsSectionKey = "interface" | "notation" | "templates" | "colors" | "dice" | "addons" | "about";
+type SettingsSectionKey = "interface" | "notation" | "files" | "templates" | "colors" | "dice" | "addons" | "about";
 
 function getColorDefs(): ColorDef[] {
 	return [
@@ -300,6 +306,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 		const sections: Array<{ key: SettingsSectionKey; label: string }> = [
 			{ key: "interface", label: t("settings.nav-interface") },
 			{ key: "notation", label: t("settings.nav-notation") },
+			{ key: "files", label: t("settings.nav-files") },
 			{ key: "templates", label: t("settings.nav-templates") },
 			{ key: "colors", label: t("settings.nav-colors") },
 			{ key: "dice", label: t("settings.nav-dice") },
@@ -336,6 +343,9 @@ export class LonelogSettingTab extends PluginSettingTab {
 			case "notation":
 				this.renderNotationPanel(containerEl);
 				break;
+			case "files":
+				this.renderFilesPanel(containerEl);
+				break;
 			case "templates":
 				this.renderTemplatesPanel(containerEl);
 				break;
@@ -358,6 +368,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 		const titles: Record<SettingsSectionKey, string> = {
 			interface: t("settings.nav-interface"),
 			notation: t("settings.nav-notation"),
+			files: t("settings.nav-files"),
 			templates: t("settings.nav-templates"),
 			colors: t("settings.nav-colors"),
 			dice: t("settings.nav-dice"),
@@ -391,6 +402,7 @@ export class LonelogSettingTab extends PluginSettingTab {
 				dropdown
 					.addOption("en", "English")
 					.addOption("es", "Español")
+					.addOption("fr", "Français")
 					.setValue(this.plugin.settings.locale)
 						.onChange(async (value) => {
 							this.plugin.settings.locale = value;
@@ -539,6 +551,34 @@ export class LonelogSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+	}
+
+	private renderFilesPanel(containerEl: HTMLElement): void {
+		const campaignSection = this.renderSubsection(containerEl, t("settings.subsection-campaign"));
+
+		const scopeLabels: Record<CampaignScope, string> = {
+			"file": t("settings.campaign-scope-file"),
+			"folder": t("settings.campaign-scope-folder"),
+			"folder-until-active": t("settings.campaign-scope-folder-until-active"),
+		};
+
+		new Setting(campaignSection)
+			.setName(t("settings.campaign-scope"))
+			.setDesc(t("settings.campaign-scope-desc"))
+			.addDropdown((dropdown) => {
+				for (const scope of CAMPAIGN_SCOPES) {
+					dropdown.addOption(scope, scopeLabels[scope]);
+				}
+
+				dropdown
+					.setValue(this.plugin.settings.campaignScope)
+					.onChange(async (value) => {
+						if (!isCampaignScope(value)) return;
+						this.plugin.settings.campaignScope = value;
+						await this.plugin.saveSettings();
+						refreshViews(this.app);
+					});
+			});
 	}
 
 	private renderTemplatesPanel(containerEl: HTMLElement): void {

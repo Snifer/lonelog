@@ -3,19 +3,17 @@
  * A dedicated sidebar view for tracking items, supplies, and wealth.
  */
 
-import { ItemView, WorkspaceLeaf, TFile } from "obsidian";
+import { Campaign } from "../utils/campaign";
+import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedElements, ParsedItem } from "../utils/parser";
 import { t } from "../i18n/i18n";
 
 export const RESOURCE_VIEW_TYPE = "lonelog-resource-view";
 
-export class ResourceStatusView extends ItemView {
+export class ResourceStatusView extends LonelogView {
 	private elements: ParsedElements | null = null;
-	private currentFile: TFile | null = null;
 
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
+	protected readonly containerClasses = ["lonelog-dashboard-container"];
 
 	getViewType(): string {
 		return RESOURCE_VIEW_TYPE;
@@ -29,32 +27,8 @@ export class ResourceStatusView extends ItemView {
 		return "coins";
 	}
 
-	async onOpen(): Promise<void> {
-		this.registerEvent(this.app.workspace.on("active-leaf-change", () => void this.refresh()));
-		this.registerEvent(this.app.vault.on("modify", (file) => {
-			if (file === this.currentFile) void this.refresh();
-		}));
-		
-		await this.refresh();
-	}
-
-	async refresh(): Promise<void> {
-		const container = this.contentEl;
-		container.empty();
-		container.addClass("lonelog-dashboard-container");
-
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		this.currentFile = activeFile;
-		const content = await this.app.vault.read(activeFile);
-		this.elements = NotationParser.parse(content);
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		this.elements = NotationParser.parse(campaign.content);
 
 		const header = container.createDiv({ cls: "ll-dashboard-header", attr: { style: "padding: 0 10px;" } });
 		header.createEl("h3", { text: t("views.resources-header") });
@@ -134,18 +108,5 @@ export class ResourceStatusView extends ItemView {
 	        const qtyEl = main.createDiv({ cls: "ll-resource-qty" });
 	        qtyEl.setText(item.quantity);
 	    }
-	}
-
-	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView({ from: { line, ch: 0 }, to: { line, ch: 0 } }, true);
-			}
-		});
 	}
 }

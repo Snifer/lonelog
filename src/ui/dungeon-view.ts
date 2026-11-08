@@ -3,19 +3,18 @@
  * A dedicated sidebar view for tracking rooms and dungeon exploration.
  */
 
-import { ItemView, WorkspaceLeaf, TFile } from "obsidian";
+import { Campaign } from "../utils/campaign";
+import { LonelogView } from "./lonelog-view";
 import { NotationParser, ParsedElements } from "../utils/parser";
 import { t } from "../i18n/i18n";
 
 export const DUNGEON_VIEW_TYPE = "lonelog-dungeon-view";
 
-export class DungeonStatusView extends ItemView {
+export class DungeonStatusView extends LonelogView {
 	private elements: ParsedElements | null = null;
-	private currentFile: TFile | null = null;
 
-	constructor(leaf: WorkspaceLeaf) {
-		super(leaf);
-	}
+	// Reuse the same premium sidebar padding/styles
+	protected readonly containerClasses = ["lonelog-thread-container"];
 
 	getViewType(): string {
 		return DUNGEON_VIEW_TYPE;
@@ -29,32 +28,8 @@ export class DungeonStatusView extends ItemView {
 		return "map";
 	}
 
-	async onOpen(): Promise<void> {
-		this.registerEvent(this.app.workspace.on("active-leaf-change", () => void this.refresh()));
-		this.registerEvent(this.app.vault.on("modify", (file) => {
-			if (file === this.currentFile) void this.refresh();
-		}));
-		
-		await this.refresh();
-	}
-
-	async refresh(): Promise<void> {
-		const container = this.contentEl;
-		container.empty();
-		container.addClass("lonelog-thread-container"); // Reuse the same premium sidebar padding/styles
-
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			container.createDiv({
-				text: t("views.no-active-file"),
-				cls: "lonelog-empty-state",
-			});
-			return;
-		}
-
-		this.currentFile = activeFile;
-		const content = await this.app.vault.read(activeFile);
-		this.elements = NotationParser.parse(content);
+	protected renderCampaign(container: HTMLElement, campaign: Campaign): void {
+		this.elements = NotationParser.parse(campaign.content);
 
 		const header = container.createDiv({ cls: "lonelog-thread-header" });
 		header.createEl("h4", { text: t("views.dungeon-header") });
@@ -99,19 +74,6 @@ export class DungeonStatusView extends ItemView {
 				const exitsEl = item.createDiv({ cls: "ll-room-exits" });
 				exitsEl.createSpan({ text: "Exits: ", cls: "ll-exits-label" });
 				exitsEl.createSpan({ text: room.exits.join(", "), cls: "ll-exits-list" });
-			}
-		});
-	}
-
-	private jumpToLine(line: number): void {
-		if (!this.currentFile) return;
-
-		const leaf = this.app.workspace.getLeaf(false);
-		void leaf.openFile(this.currentFile).then(() => {
-			const editor = this.app.workspace.activeEditor?.editor;
-			if (editor) {
-				editor.setCursor({ line, ch: 0 });
-				editor.scrollIntoView({ from: { line, ch: 0 }, to: { line, ch: 0 } }, true);
 			}
 		});
 	}
